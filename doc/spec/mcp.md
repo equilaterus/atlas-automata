@@ -1,331 +1,77 @@
-# `src/mcp/`
+# Atlas MCP 0.1
 
-The Atlas MCP server is implemented in Go.
+## Scope and source layout
 
-Keep the project initially simple and flat.
-
-Expected initial structure:
+The server is a local stdio MCP implemented in Go with the official Go MCP SDK. Source remains flat under `src/mcp/`:
 
 ```text
-src/mcp/
-├── main.go
-├── mcp.go
-├── git.go
-├── repo.go
-├── skills.go
-├── operations.go
-├── history.go
-├── build.go
-├── go.mod
-└── go.sum
+main.go        process entry and one-shot sync
+mcp.go         tool registration and schemas
+repo.go        repository and path validation
+git.go         explicit Git commands and merge-only synchronization
+operations.go  concrete file mutations
+history.go     semantic history append
+skills.go      installed skill discovery
+build.go       build-injected version
+functional_test.go
 ```
 
-Do not create package hierarchies merely to organize a small number of files.
+Do not add `cmd/`, `internal/`, `pkg/`, service/manager/provider/factory/adapter layers, interfaces, mocks, or generalized Git/filesystem abstractions for 0.1.
 
-Do not introduce:
+## MCP API
+
+The server exposes six tools:
+
+| Tool | Behavior |
+| --- | --- |
+| `atlas_status` | Reports root, branch, HEAD, cleanliness, and installed skills without fetching. |
+| `atlas_sync` | Fetches `origin` and merges the current remote branch when necessary. |
+| `atlas_create` | Creates one new protected regular file. |
+| `atlas_update` | Atomically replaces one existing protected regular file. |
+| `atlas_delete` | Deletes one existing protected regular file. |
+| `atlas_move` | Moves one existing protected regular file to a new protected path. |
+
+Mutation inputs use repository-relative paths. Create/update take complete UTF-8 `content`. All mutations accept optional `summary` and `commit_message`. The summary is appended to UTC-dated Markdown under `log/` in the same commit.
+
+## Protected paths
+
+Only these paths are writable through mutation tools:
 
 ```text
-cmd/
-internal/
-pkg/
-services/
-repositories/
-providers/
-managers/
-factories/
-adapters/
+AUTOMATIZER.md
+data/**
+doc/**
+ai/**
+log/**
 ```
 
-unless actual code complexity eventually makes one of them clearly necessary.
+Paths must be relative, remain inside the repository, and not traverse symlinked parents. Targets are files, not arbitrary directory trees. Atlas rejects a mutation if protected state already has staged, unstaged, or untracked changes, preventing unrelated direct edits from entering an Atlas commit.
 
-For 0.1, keep `src/mcp/` simple.
+## Mutation transaction
 
----
+Every mutation is sequential and follows this exact order:
 
-# Go programming rules
+1. Verify repository root, attached branch, target path, and absence of existing protected changes.
+2. Fetch `origin`.
+3. Compare local HEAD with `origin/<branch>` and merge the remote ref when it is not already an ancestor.
+4. If that merge conflicts, stop before applying the mutation and leave the conflict visible for human/agent reconciliation.
+5. Recheck protected cleanliness.
+6. Apply exactly one create, update, delete, or move.
+7. Append semantic history when requested.
+8. Validate that no unresolved conflict exists.
+9. Stage only the mutation paths and generated history path, then commit with `ATLAS_MCP_COMMIT=1` for the repository guard.
+10. Fetch and merge again.
+11. Revalidate and push `HEAD:refs/heads/<branch>`.
+12. If push is rejected because origin advanced, fetch, merge, revalidate, and retry up to three times.
 
-Use plain, straightforward Go.
+Atlas never invokes rebase or force-push. A post-commit merge conflict is reported and never silently resolved.
 
-Favor:
+## Git behavior
 
-```text
-functions
-plain structs
-explicit parameters
-explicit return values
-composition
-direct control flow
-```
+Atlas invokes the user's installed `git` executable so credential helpers, SSH configuration, user identity, remotes, and normal Git configuration continue to work. Published history is immutable. A branch must be attached; detached HEAD is rejected. A mutation requires an `origin` remote because successful completion includes push.
 
----
+## Implementation style
 
-# NO INTERFACES
+Use concrete functions such as `findRepoRoot`, `syncRepo`, `createFile`, and `writeHistory`. Functions should expose side effects, accept explicit inputs, return normal contextual errors, and remain readable top-to-bottom. Runtime state is passed or captured explicitly. Server mutation handlers share one concrete mutex so Git mutations cannot overlap.
 
-Do not introduce Go interfaces.
-
-Atlas Automata 0.1 does not use interfaces.
-
-Do not create interfaces for:
-
-* testing
-* mocking
-* Git
-* repositories
-* MCP operations
-* filesystem access
-* future implementations
-* dependency injection
-* architectural cleanliness
-
-Use concrete functions and concrete data.
-
----
-
-# NO ABSTRACTIONS
-
-Do not introduce abstractions.
-
-This is intentional.
-
-Do not build generalized frameworks around code that is currently simple.
-
-Avoid:
-
-```text
-RepositoryManager
-GitService
-OperationExecutor
-DataProvider
-StorageBackend
-FileRepository
-SkillRegistryService
-BuildPipeline
-EventBus
-PluginManager
-Factory
-Provider
-Adapter hierarchy
-```
-
-unless a later real requirement forces the design to change.
-
-For Atlas 0.1:
-
-> Solve the concrete problem directly.
-
-Prefer:
-
-```go
-findRepoRoot()
-gitFetch()
-gitMerge()
-gitStatus()
-createFile()
-updateFile()
-deleteFile()
-moveFile()
-loadSkills()
-writeHistory()
-```
-
-If two functions contain some similar code, that is acceptable.
-
-Do not generalize code merely because duplication exists.
-
-Duplicated simple code is preferable to a premature abstraction.
-
----
-
-# Composition
-
-Use simple composition.
-
-Example:
-
-```text
-syncRepo()
-    ↓
-checkPath()
-    ↓
-applyMutation()
-    ↓
-validateRepo()
-    ↓
-commitChanges()
-    ↓
-syncRepo()
-    ↓
-push()
-```
-
-Each function should perform a concrete recognizable task.
-
-Avoid hidden behavior.
-
----
-
-# Functions
-
-Functions should normally:
-
-* have one clear purpose
-* accept explicit inputs
-* return explicit results or errors
-* expose side effects clearly
-* remain easy to read top-to-bottom
-
-Do not artificially split coherent logic into dozens of tiny functions.
-
-Optimize for comprehension, not line-count metrics.
-
----
-
-# Data structures
-
-Use plain Go structs where structured state is useful.
-
-Example:
-
-```go
-type SyncState struct {
-    Branch     string
-    LocalHead  string
-    RemoteHead string
-}
-```
-
-Do not attach methods merely to simulate classes.
-
-A function is usually preferable:
-
-```go
-syncRepo(root string) error
-```
-
-instead of:
-
-```go
-repo.Sync()
-```
-
-when no meaningful object behavior exists.
-
----
-
-# Global state
-
-Avoid mutable global state.
-
-Constants are fine.
-
-Runtime information should normally be passed explicitly or loaded when needed.
-
----
-
-# Errors
-
-Use normal Go errors.
-
-Add useful context.
-
-Example:
-
-```go
-if err != nil {
-    return fmt.Errorf("fetch origin: %w", err)
-}
-```
-
-Do not build custom error hierarchies unless an actual requirement appears.
-
----
-
-# Concurrency
-
-Default to synchronous execution.
-
-Do not use goroutines just because Go provides them.
-
-Concurrency is appropriate only when:
-
-* operations are independent
-* they are meaningfully slow
-* concurrent execution clearly improves behavior
-
-Git mutations must remain sequential.
-
-Protected repository mutations must remain sequential.
-
-Do not build complex channel-based architectures.
-
-Use async/concurrency only where it demonstrably helps.
-
----
-
-# Dependencies
-
-Keep dependencies extremely small.
-
-Prefer the Go standard library.
-
-Use the official Go MCP SDK.
-
-Do not implement MCP or JSON-RPC manually.
-
-Do not add dependencies for trivial functionality that can be implemented clearly using the standard library.
-
----
-
-# MCP responsibility
-
-Atlas MCP is the controlled write gateway for an Automatizer repository.
-
-Its responsibilities are intentionally narrow:
-
-```text
-synchronize Git
-inspect repository state
-validate target paths
-create files
-update files
-delete files
-move files
-validate repository workflow
-record operation information
-commit
-synchronize again
-push
-```
-
-It is not a domain engine.
-
-It is not an AI.
-
-It is not a query engine.
-
-It is not an ontology engine.
-
----
-
-# MCP write operations
-
-The initial MCP API should remain small.
-
-Conceptually:
-
-```text
-atlas.sync
-
-atlas.create
-atlas.update
-atlas.delete
-atlas.move
-
-atlas.status
-```
-
-Exact MCP tool names may change during implementation.
-
-Do not expose an unnecessarily large API.
-
----
+Concurrency is not otherwise introduced. Similar short code may remain duplicated. The standard library is preferred except for the official MCP SDK.
