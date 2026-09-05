@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+echo "Atlas repositories never rebase. Fetch and merge instead." >&2
+exit 1
