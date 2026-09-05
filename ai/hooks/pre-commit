@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+protected=0
+while IFS= read -r -d '' path; do
+    case "$path" in
+        AUTOMATIZER.md|data/*|doc/*|ai/*|log/*) protected=1 ;;
+    esac
+done < <(git diff --cached --name-only -z --diff-filter=ACDMRTUXB)
+
+if [[ "$protected" == 1 && "${ATLAS_MCP_COMMIT:-}" != 1 ]]; then
+    echo "Protected Automatizer state must be committed through Atlas MCP." >&2
+    exit 1
+fi
