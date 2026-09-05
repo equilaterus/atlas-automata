@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+command_text="${1:-}"
+case "$command_text" in
+    *"git rebase"*|*"git pull --rebase"*|*"git pull -r"*)
+        echo "Atlas forbids rebasing." >&2
+        exit 1
+        ;;
+    *"git push --force"*|*"git push -f"*)
+        echo "Atlas forbids forced pushes." >&2
+        exit 1
+        ;;
+esac
