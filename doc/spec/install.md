@@ -28,7 +28,7 @@ command = "/absolute/project/path/.atlas/bin/atlas-mcp"
 args = ["--root", "/absolute/project/path"]
 ```
 
-An existing Atlas MCP entry is preserved. Missing base skills are copied into `ai/skills/`; any project-owned skill with the same name is preserved. Installation is the trusted bootstrap step that creates initial protected capabilities before MCP enforcement is active.
+The agent guards `sync-before-work` and `guard-command` are copied into `ai/hooks/` without replacing different project-owned hooks. An existing Atlas MCP entry is preserved. Missing base skills are copied into `ai/skills/`; any project-owned skill with the same name is preserved. Installation is the trusted bootstrap step that creates initial protected capabilities before MCP enforcement is active.
 
 If a target Git hook already exists with different content, installation stops instead of replacing project behavior.
 
