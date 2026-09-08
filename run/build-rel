@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(cd "$(dirname "$0")/.." && pwd)"
+version="$(tr -d '[:space:]' < "$root/VERSION")"
+mkdir -p "$root/bin/rel"
+cd "$root/src/mcp"
+go build -trimpath -ldflags="-s -w -X main.version=$version" -o "$root/bin/rel/atlas-mcp" .

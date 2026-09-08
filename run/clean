@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(cd "$(dirname "$0")/.." && pwd)"
+find "$root/bin/dbg" "$root/bin/rel" -mindepth 1 -maxdepth 1 -type f -delete 2>/dev/null || true

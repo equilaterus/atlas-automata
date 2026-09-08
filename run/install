@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+framework_root="$(cd "$(dirname "$0")/.." && pwd)"
+child_root="$(git rev-parse --show-toplevel)"
+
+if [[ ! -d "$child_root/.git" ]]; then
+    echo "Atlas installation requires a normal Git worktree" >&2
+    exit 1
+fi
+
+if [[ "$framework_root" != "$child_root/lib/atlas-automata" && "$framework_root" != "$child_root" ]]; then
+    echo "Expected Atlas at lib/atlas-automata in the child repository" >&2
+    exit 1
+fi
+
+"$framework_root/run/build-rel"
+
+mkdir -p "$child_root/.atlas/bin" "$child_root/.githooks" "$child_root/.codex"
+cp "$framework_root/bin/rel/atlas-mcp" "$child_root/.atlas/bin/atlas-mcp"
+
+install_hook() {
+    local name="$1"
+    local source="$framework_root/ai/hooks/$name"
+    local target="$child_root/.githooks/$name"
+    if [[ -e "$target" ]] && ! cmp -s "$source" "$target"; then
+        echo "Refusing to replace project-owned hook: $target" >&2
+        exit 1
+    fi
+    cp "$source" "$target"
+    chmod +x "$target"
+}
+
+install_hook pre-commit
+install_hook pre-rebase
+install_hook pre-push
+git -C "$child_root" config core.hooksPath .githooks
+
+mkdir -p "$child_root/ai/hooks"
+for name in sync-before-work guard-command; do
+    source="$framework_root/ai/hooks/$name"
+    target="$child_root/ai/hooks/$name"
+    if [[ -e "$target" ]] && ! cmp -s "$source" "$target"; then
+        echo "Preserving existing project agent hook: $name"
+        continue
+    fi
+    cp "$source" "$target"
+    chmod +x "$target"
+done
+
+config="$child_root/.codex/config.toml"
+if [[ ! -e "$config" ]]; then
+    : > "$config"
+fi
+if ! grep -q '^\[mcp_servers\.atlas\]$' "$config"; then
+    command_path="${child_root//\\/\\\\}"
+    command_path="${command_path//\"/\\\"}"
+    {
+        printf '\n[mcp_servers.atlas]\n'
+        printf 'command = "%s/.atlas/bin/atlas-mcp"\n' "$command_path"
+        printf 'args = ["--root", "%s"]\n' "$command_path"
+    } >> "$config"
+fi
+
+mkdir -p "$child_root/ai/skills"
+for skill in "$framework_root"/ai/skills/*; do
+    [[ -d "$skill" ]] || continue
+    name="$(basename "$skill")"
+    if [[ -e "$child_root/ai/skills/$name" ]]; then
+        echo "Preserving existing project skill: $name"
+        continue
+    fi
+    cp -R "$skill" "$child_root/ai/skills/$name"
+done
+
+echo "Atlas installed for $child_root"
+echo "Codex MCP configuration: $config"
