@@ -19,6 +19,15 @@ fi
 mkdir -p "$child_root/.atlas/bin" "$child_root/.githooks" "$child_root/.codex"
 cp "$framework_root/bin/rel/atlas-mcp" "$child_root/.atlas/bin/atlas-mcp"
 
+ignore_file="$child_root/.gitignore"
+touch "$ignore_file"
+if ! grep -qxF '.atlas/' "$ignore_file"; then
+    if [[ -s "$ignore_file" ]]; then
+        printf '\n' >> "$ignore_file"
+    fi
+    printf '.atlas/\n' >> "$ignore_file"
+fi
+
 install_hook() {
     local name="$1"
     local source="$framework_root/ai/hooks/$name"
@@ -75,3 +84,7 @@ done
 
 echo "Atlas installed for $child_root"
 echo "Codex MCP configuration: $config"
+if [[ "$framework_root" != "$child_root" ]]; then
+    echo "Next: commit and push .gitignore, .gitmodules, .codex, .githooks, ai, and lib/atlas-automata."
+    echo "Use ATLAS_MCP_COMMIT=1 for the trusted bootstrap commit."
+fi

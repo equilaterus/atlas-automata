@@ -2,6 +2,42 @@
 
 Atlas Automata is a small Git-native persistence framework for AI agents. The agent reads and understands a domain; the Atlas MCP server is the exclusive writer for protected project state and applies a fetch/merge/commit/fetch/merge/push workflow.
 
+## Install first
+
+Atlas is not copied into a child project. Add it as a pinned Git submodule at the exact `lib/atlas-automata` path, run the installer from the child repository root, then commit and push the bootstrap:
+
+```bash
+git submodule add https://github.com/equilaterus/atlas-automata.git lib/atlas-automata
+./lib/atlas-automata/run/install
+git add .gitignore .gitmodules .codex .githooks ai lib/atlas-automata
+ATLAS_MCP_COMMIT=1 git commit -m "Install Atlas Automata"
+git push
+```
+
+The environment override on the bootstrap commit is required because installation activates the protected-state pre-commit guard. `.atlas/` contains the generated local binary and is added to the child `.gitignore`; it is not committed.
+
+After cloning a child repository, restore the exact pinned framework revision before installing:
+
+```bash
+git submodule sync --recursive
+git submodule update --init --recursive
+./lib/atlas-automata/run/install
+```
+
+To update Atlas deliberately, update the submodule, reinstall the generated binary, then commit and push the new pointer from the child repository:
+
+```bash
+git submodule update --remote --merge lib/atlas-automata
+./lib/atlas-automata/run/install
+git add lib/atlas-automata
+git commit -m "Update Atlas Automata"
+git push
+```
+
+The installer builds `.atlas/bin/atlas-mcp`, configures project-local Codex MCP access, installs Git guards under `.githooks`, and copies missing base skills without replacing project-owned skills.
+
+If Atlas itself is edited from inside a child checkout, commit and push inside `lib/atlas-automata` first. Then return to the child repository, reinstall, commit the changed submodule pointer, and push the child repository. Never leave the child pointing to an unpublished Atlas commit.
+
 ## Build and test
 
 ```bash
@@ -11,16 +47,6 @@ Atlas Automata is a small Git-native persistence framework for AI agents. The ag
 ```
 
 The debug and release binaries are written to `bin/dbg/atlas-mcp` and `bin/rel/atlas-mcp`.
-
-## Install in a child repository
-
-Add Atlas at `lib/atlas-automata`, then run the installer from the child repository root:
-
-```bash
-./lib/atlas-automata/run/install
-```
-
-The installer builds `.atlas/bin/atlas-mcp`, configures project-local Codex MCP access, installs Git guards under `.githooks`, and copies missing base skills without replacing project-owned skills.
 
 ## MCP tools
 

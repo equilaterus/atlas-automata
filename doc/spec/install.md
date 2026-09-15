@@ -1,4 +1,64 @@
-# Build, installation, and guards
+# Installation, submodule lifecycle, build, and guards
+
+## Child installation
+
+Atlas must be pinned as a Git submodule at `lib/atlas-automata`. From the child repository root:
+
+```bash
+git submodule add https://github.com/equilaterus/atlas-automata.git lib/atlas-automata
+./lib/atlas-automata/run/install
+git add .gitignore .gitmodules .codex .githooks ai lib/atlas-automata
+ATLAS_MCP_COMMIT=1 git commit -m "Install Atlas Automata"
+git push
+```
+
+Installation activates the protected-state pre-commit hook before the bootstrap files under `ai/` are committed. `ATLAS_MCP_COMMIT=1` authorizes that one trusted bootstrap commit. The installer adds `.atlas/` to the child `.gitignore`; generated binaries must not be committed.
+
+The installer verifies a normal Git worktree and the expected framework location, builds a release binary, and installs it at `.atlas/bin/atlas-mcp`. It configures `core.hooksPath=.githooks` and creates a project-local Codex entry in `.codex/config.toml`:
+
+```toml
+[mcp_servers.atlas]
+command = "/absolute/project/path/.atlas/bin/atlas-mcp"
+args = ["--root", "/absolute/project/path"]
+```
+
+The agent guards `sync-before-work` and `guard-command` are copied into `ai/hooks/` without replacing different project-owned hooks. An existing Atlas MCP entry is preserved. Missing base skills are copied into `ai/skills/`; any project-owned skill with the same name is preserved. Installation is the trusted bootstrap step that creates initial protected capabilities before MCP enforcement is active.
+
+If a target Git hook already exists with different content, installation stops instead of replacing project behavior.
+
+## Restore, resynchronize, and update the submodule
+
+After cloning a child repository, synchronize submodule URLs and restore its pinned revision before running the installer:
+
+```bash
+git submodule sync --recursive
+git submodule update --init --recursive
+./lib/atlas-automata/run/install
+```
+
+Updating Atlas is explicit. Update from the submodule remote, reinstall the generated binary, then commit and push the new submodule pointer in the child repository:
+
+```bash
+git submodule update --remote --merge lib/atlas-automata
+./lib/atlas-automata/run/install
+git add lib/atlas-automata
+git commit -m "Update Atlas Automata"
+git push
+```
+
+When developing Atlas inside a child checkout, the two repositories must be published in dependency order:
+
+```bash
+git -C lib/atlas-automata add <atlas-files>
+git -C lib/atlas-automata commit -m "Describe the Atlas change"
+git -C lib/atlas-automata push
+./lib/atlas-automata/run/install
+git add lib/atlas-automata
+git commit -m "Update Atlas Automata"
+git push
+```
+
+The child repository must never point to an Atlas commit that has not been pushed to the submodule remote.
 
 ## Developer commands
 
@@ -11,26 +71,6 @@
 ```
 
 Builds inject the version from `VERSION`. Generated binaries are not source-of-truth.
-
-## Child installation
-
-With Atlas pinned at `lib/atlas-automata`, run from the child root:
-
-```bash
-./lib/atlas-automata/run/install
-```
-
-The installer verifies a normal Git worktree and expected framework location, builds a release binary, and installs it at `.atlas/bin/atlas-mcp`. It configures `core.hooksPath=.githooks` and creates a project-local Codex entry in `.codex/config.toml`:
-
-```toml
-[mcp_servers.atlas]
-command = "/absolute/project/path/.atlas/bin/atlas-mcp"
-args = ["--root", "/absolute/project/path"]
-```
-
-The agent guards `sync-before-work` and `guard-command` are copied into `ai/hooks/` without replacing different project-owned hooks. An existing Atlas MCP entry is preserved. Missing base skills are copied into `ai/skills/`; any project-owned skill with the same name is preserved. Installation is the trusted bootstrap step that creates initial protected capabilities before MCP enforcement is active.
-
-If a target Git hook already exists with different content, installation stops instead of replacing project behavior.
 
 ## Guards
 
