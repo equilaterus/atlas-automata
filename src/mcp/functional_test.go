@@ -56,6 +56,10 @@ func commitTestFile(t *testing.T, root, path, content, message string) {
 }
 
 func makeTestRepository(t *testing.T) testRepository {
+	return makeTestRepositoryWithSetup(t, true)
+}
+
+func makeTestRepositoryWithSetup(t *testing.T, configured bool) testRepository {
 	t.Helper()
 	base := t.TempDir()
 	repository := testRepository{
@@ -67,13 +71,61 @@ func makeTestRepository(t *testing.T) testRepository {
 	runTestGit(t, base, "init", "--bare", "--initial-branch=dev", repository.remote)
 	runTestGit(t, base, "clone", repository.remote, repository.seed)
 	configureTestGit(t, repository.seed)
-	commitTestFile(t, repository.seed, "README.md", "child repository\n", "initial")
+	writeTestFile(t, repository.seed, "README.md", "child repository\n")
+	if configured {
+		writeTestFile(t, repository.seed, "AUTOMATIZER.md", "---\natlas_setup: complete\natlas_setup_version: 1\n---\n# Test domain\n")
+		writeTestFile(t, repository.seed, "doc/domain/model.md", "# Model\n")
+		writeTestFile(t, repository.seed, "doc/domain/indexing.md", "# Indexing\n")
+		writeTestFile(t, repository.seed, "doc/domain/operations.md", "# Operations\n")
+		writeTestFile(t, repository.seed, "ai/skills/test-domain/SKILL.md", "---\nname: test-domain\ndescription: Test domain.\n---\n")
+	}
+	runTestGit(t, repository.seed, "add", ".")
+	runTestGit(t, repository.seed, "commit", "-m", "initial")
 	runTestGit(t, repository.seed, "push", "-u", "origin", "dev")
 	runTestGit(t, base, "clone", repository.remote, repository.cloneA)
 	runTestGit(t, base, "clone", repository.remote, repository.cloneB)
 	configureTestGit(t, repository.cloneA)
 	configureTestGit(t, repository.cloneB)
 	return repository
+}
+
+func TestSetupGateRequiresCompleteGuidedConfiguration(t *testing.T) {
+	repository := makeTestRepositoryWithSetup(t, false)
+	if state, err := setupState(repository.cloneB); err != nil || state != "not_started" {
+		t.Fatalf("initial setup state = %q, %v; want not_started", state, err)
+	}
+	callTestTool(t, repository.cloneB, "atlas_create", map[string]any{
+		"path": "data/item.md", "content": "blocked\n",
+	}, true)
+	callTestTool(t, repository.cloneB, "atlas_create", map[string]any{
+		"path": "AUTOMATIZER.md", "content": "---\natlas_setup: complete\natlas_setup_version: 1\n---\n",
+	}, true)
+	if _, err := os.Stat(filepath.Join(repository.cloneB, "AUTOMATIZER.md")); !os.IsNotExist(err) {
+		t.Fatalf("premature completed setup was written: %v", err)
+	}
+
+	callTestTool(t, repository.cloneB, "atlas_create", map[string]any{
+		"path": "AUTOMATIZER.md", "content": "---\natlas_setup: in_progress\natlas_setup_version: 1\n---\n# Test domain\n",
+	}, false)
+	for path, content := range map[string]string{
+		"doc/domain/model.md":            "# Model\n",
+		"doc/domain/indexing.md":         "# Indexing\n",
+		"doc/domain/operations.md":       "# Operations\n",
+		"ai/skills/test-domain/SKILL.md": "---\nname: test-domain\ndescription: Test domain.\n---\n",
+	} {
+		callTestTool(t, repository.cloneB, "atlas_create", map[string]any{
+			"path": path, "content": content,
+		}, false)
+	}
+	callTestTool(t, repository.cloneB, "atlas_update", map[string]any{
+		"path": "AUTOMATIZER.md", "content": "---\natlas_setup: complete\natlas_setup_version: 1\n---\n# Test domain\n",
+	}, false)
+	if state, err := setupState(repository.cloneB); err != nil || state != "complete" {
+		t.Fatalf("final setup state = %q, %v; want complete", state, err)
+	}
+	callTestTool(t, repository.cloneB, "atlas_create", map[string]any{
+		"path": "data/item.md", "content": "allowed\n",
+	}, false)
 }
 
 func configureTestGit(t *testing.T, root string) {
@@ -91,7 +143,7 @@ func callTestTool(t *testing.T, root, name string, arguments map[string]any, wan
 		t.Fatal(err)
 	}
 	defer serverSession.Close()
-	client := mcp.NewClient(&mcp.Implementation{Name: "atlas-functional-test", Version: "0.1.0"}, nil)
+	client := mcp.NewClient(&mcp.Implementation{Name: "atlas-functional-test", Version: "0.2.0"}, nil)
 	clientSession, err := client.Connect(ctx, clientTransport, nil)
 	if err != nil {
 		t.Fatal(err)

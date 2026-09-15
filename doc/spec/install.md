@@ -7,7 +7,7 @@ Atlas must be pinned as a Git submodule at `lib/atlas-automata`. From the child 
 ```bash
 git submodule add https://github.com/equilaterus/atlas-automata.git lib/atlas-automata
 ./lib/atlas-automata/run/install
-git add .gitignore .gitmodules .codex .githooks ai lib/atlas-automata
+git add .gitignore .gitmodules .codex .githooks AGENTS.md ai lib/atlas-automata
 ATLAS_MCP_COMMIT=1 git commit -m "Install Atlas Automata"
 git push
 ```
@@ -22,7 +22,9 @@ command = "/absolute/project/path/.atlas/bin/atlas-mcp"
 args = ["--root", "/absolute/project/path"]
 ```
 
-The agent guards `sync-before-work` and `guard-command` are copied into `ai/hooks/` without replacing different project-owned hooks. An existing Atlas MCP entry is preserved. Missing base skills are copied into `ai/skills/`; any project-owned skill with the same name is preserved. Installation is the trusted bootstrap step that creates initial protected capabilities before MCP enforcement is active.
+The agent guards `sync-before-work` and `guard-command` are copied into `ai/hooks/` without replacing different project-owned hooks. An existing Atlas MCP entry is preserved. Missing base skills, including mandatory `configure`, are copied into `ai/skills/`; any project-owned skill with the same name is preserved. The installer appends an idempotent Atlas instruction block to the child `AGENTS.md` without replacing existing instructions. Installation is the trusted bootstrap step that creates initial protected capabilities before MCP enforcement is active.
+
+After the bootstrap is committed and pushed, the user restarts the agent client so it loads the MCP configuration. The agent calls `atlas_sync` and `atlas_status`, then completes the guided workflow in `configure` whenever setup is not `complete`. Domain-data writes are technically blocked until that workflow produces the required artifacts. See [configuration.md](configuration.md).
 
 If a target Git hook already exists with different content, installation stops instead of replacing project behavior.
 
@@ -41,8 +43,8 @@ Updating Atlas is explicit. Update from the submodule remote, reinstall the gene
 ```bash
 git submodule update --remote --merge lib/atlas-automata
 ./lib/atlas-automata/run/install
-git add lib/atlas-automata
-git commit -m "Update Atlas Automata"
+git add .gitignore AGENTS.md ai lib/atlas-automata
+ATLAS_MCP_COMMIT=1 git commit -m "Update Atlas Automata"
 git push
 ```
 
@@ -53,8 +55,8 @@ git -C lib/atlas-automata add <atlas-files>
 git -C lib/atlas-automata commit -m "Describe the Atlas change"
 git -C lib/atlas-automata push
 ./lib/atlas-automata/run/install
-git add lib/atlas-automata
-git commit -m "Update Atlas Automata"
+git add .gitignore AGENTS.md ai lib/atlas-automata
+ATLAS_MCP_COMMIT=1 git commit -m "Update Atlas Automata"
 git push
 ```
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Configure Atlas"
+  short_description: "Guide mandatory domain and index setup"
+  default_prompt: "Use $configure to guide me through the complete Atlas setup for this repository."

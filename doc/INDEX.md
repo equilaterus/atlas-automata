@@ -6,6 +6,7 @@ This index routes agents and developers to detailed specifications. `AGENTS.md` 
 | --- | --- |
 | [spec/initial.md](spec/initial.md) | Product purpose, architecture, responsibility split, or child-project model. |
 | [spec/repository.md](spec/repository.md) | Repository layout, protected state, domain evolution, compatibility, views, or generated output. |
+| [spec/configuration.md](spec/configuration.md) | Mandatory guided setup, setup states, indexing design, required artifacts, or domain evolution. |
 | [spec/mcp.md](spec/mcp.md) | Tool contracts, path validation, Git transaction behavior, errors, or Go implementation changes. |
 | [spec/install.md](spec/install.md) | Build scripts, child installation, Codex MCP configuration, skills, or guards. |
 | [spec/testing.md](spec/testing.md) | Functional scenarios, race/conflict behavior, or acceptance criteria. |

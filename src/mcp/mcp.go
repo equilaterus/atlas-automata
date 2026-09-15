@@ -14,6 +14,7 @@ type StatusOutput struct {
 	Branch string   `json:"branch"`
 	Head   string   `json:"head"`
 	Clean  bool     `json:"clean"`
+	Setup  string   `json:"setup"`
 	Skills []string `json:"skills"`
 }
 
@@ -59,7 +60,11 @@ func newMCPServer(root string) *mcp.Server {
 			if err != nil {
 				return nil, StatusOutput{}, err
 			}
-			return nil, StatusOutput{Root: root, Branch: branch, Head: head, Clean: status == "", Skills: skills}, nil
+			setup, err := setupState(root)
+			if err != nil {
+				return nil, StatusOutput{}, err
+			}
+			return nil, StatusOutput{Root: root, Branch: branch, Head: head, Clean: status == "", Setup: setup, Skills: skills}, nil
 		})
 
 	mcp.AddTool(server, &mcp.Tool{Name: "atlas_sync", Description: "Fetch origin and merge the current remote branch without rebasing."},

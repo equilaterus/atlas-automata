@@ -1,4 +1,4 @@
-# Atlas MCP 0.1
+# Atlas MCP 0.2
 
 ## Scope and source layout
 
@@ -16,7 +16,7 @@ build.go       build-injected version
 functional_test.go
 ```
 
-Do not add `cmd/`, `internal/`, `pkg/`, service/manager/provider/factory/adapter layers, interfaces, mocks, or generalized Git/filesystem abstractions for 0.1.
+Do not add `cmd/`, `internal/`, `pkg/`, service/manager/provider/factory/adapter layers, interfaces, mocks, or generalized Git/filesystem abstractions for 0.2.
 
 ## MCP API
 
@@ -24,7 +24,7 @@ The server exposes six tools:
 
 | Tool | Behavior |
 | --- | --- |
-| `atlas_status` | Reports root, branch, HEAD, cleanliness, and installed skills without fetching. |
+| `atlas_status` | Reports root, branch, HEAD, cleanliness, setup state, and installed skills without fetching. |
 | `atlas_sync` | Fetches `origin` and merges the current remote branch when necessary. |
 | `atlas_create` | Creates one new protected regular file. |
 | `atlas_update` | Atomically replaces one existing protected regular file. |
@@ -47,11 +47,13 @@ log/**
 
 Paths must be relative, remain inside the repository, and not traverse symlinked parents. Targets are files, not arbitrary directory trees. Atlas rejects a mutation if protected state already has staged, unstaged, or untracked changes, preventing unrelated direct edits from entering an Atlas commit.
 
+Mutations involving `data/` additionally require `setup: complete`. Atlas derives that state from the `AUTOMATIZER.md` front-matter marker, the standard model/indexing/operations documents, and at least one installed non-base domain skill. It rejects a completion marker before those artifacts exist. See [configuration.md](configuration.md).
+
 ## Mutation transaction
 
 Every mutation is sequential and follows this exact order:
 
-1. Verify repository root, attached branch, target path, and absence of existing protected changes.
+1. Verify repository root, attached branch, target path, setup gate, and absence of existing protected changes.
 2. Fetch `origin`.
 3. Compare local HEAD with `origin/<branch>` and merge the remote ref when it is not already an ancestor.
 4. If that merge conflicts, stop before applying the mutation and leave the conflict visible for human/agent reconciliation.

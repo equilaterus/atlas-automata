@@ -8,15 +8,18 @@ Atlas Automata is a Git-native controlled writer for Automatizer repositories. K
 2. The agent may read the whole repository.
 3. Protected state is written only through Atlas MCP.
 4. `data/` is the domain database, `doc/` is authoritative domain meaning, and `ai/` contains installed agent capabilities.
-5. Synchronize before work and again inside every protected mutation.
-6. Use merge only. Never rebase, force-push, or silently resolve conflicts.
-7. Never silently destroy or reinterpret historical information.
-8. Keep Atlas concrete, small, and readable: no interfaces and no speculative abstractions.
-9. Prefer functional tests with real Git repositories and real MCP calls.
+5. Agent-led configuration is mandatory before domain data; no setup phase may be silently skipped.
+6. Synchronize before work and again inside every protected mutation.
+7. Use merge only. Never rebase, force-push, or silently resolve conflicts.
+8. Never silently destroy or reinterpret historical information.
+9. Keep Atlas concrete, small, and readable: no interfaces and no speculative abstractions.
+10. Prefer functional tests with real Git repositories and real MCP calls.
 
 ## Start every user request
 
 Before reasoning about or changing an Automatizer child project, run `atlas_sync`. If the MCP is not yet available, run the installed `.atlas/bin/atlas-mcp --root <repo> --sync` guard. Stop on a merge conflict and report it; never guess a resolution.
+
+Then run `atlas_status`. When setup is not `complete`, load `ai/skills/configure/SKILL.md` and finish its full guided workflow before accepting domain data.
 
 ## Reading and writing
 
@@ -98,14 +101,15 @@ Load only the specification relevant to the current task:
 
 - [`doc/spec/initial.md`](doc/spec/initial.md): purpose, architecture, responsibility split, and child-project model.
 - [`doc/spec/repository.md`](doc/spec/repository.md): repository layout, protected data, domain evolution, views, and history.
+- [`doc/spec/configuration.md`](doc/spec/configuration.md): mandatory agent-led setup, setup states, indexing, required artifacts, and evolution.
 - [`doc/spec/mcp.md`](doc/spec/mcp.md): MCP API, path validation, exact Git transaction, failures, and implementation constraints.
 - [`doc/spec/install.md`](doc/spec/install.md): build, installation, Codex configuration, skills, and guards.
 - [`doc/spec/testing.md`](doc/spec/testing.md): required end-to-end scenarios and acceptance criteria.
 
 Keep [`doc/INDEX.md`](doc/INDEX.md) current whenever specification pages are added, moved, renamed, or materially repurposed.
 
-## Scope of 0.1
+## Scope of 0.2
 
-Prioritize repository detection, MCP startup, synchronization, merge-only behavior, protected file mutations, commit/push workflow, guards, functional tests, minimal skill installation, and one realistic child project flow.
+Prioritize repository detection, MCP startup, mandatory guided configuration, synchronization, merge-only behavior, protected file mutations, commit/push workflow, guards, functional tests, minimal skill installation, and one realistic child project flow.
 
 Do not build a SaaS backend, database server, distributed locking, remote MCP service, OAuth, marketplace, ontology engine, generic workflow engine, event bus, domain-specific GUI, custom Git/filesystem abstraction, or a hand-written MCP/JSON-RPC implementation.

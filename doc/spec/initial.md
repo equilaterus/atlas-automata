@@ -1,4 +1,4 @@
-# Atlas Automata 0.1
+# Atlas Automata 0.2
 
 ## Purpose
 
@@ -28,7 +28,9 @@ ATLAS MCP
 GIT REPOSITORY
 ```
 
-The agent owns semantic decisions: classifications, calculations, relationships, compatibility, dashboards, and how user intent maps to records. Atlas MCP has no LLM and contains no domain engine. It operates only on exact paths and content supplied by the agent.
+The agent owns semantic decisions: classifications, calculations, relationships, compatibility, dashboards, indexing, and how user intent maps to records. Atlas MCP has no LLM and contains no domain engine. It operates only on exact paths and content supplied by the agent.
+
+Before the first domain record, the agent must conduct the complete guided configuration in `ai/skills/configure/SKILL.md`. The user explains goals and approves decisions in ordinary language; the agent designs the repository. The MCP enforces the boundary by rejecting `data/` mutations until setup is complete.
 
 ## Child project
 
@@ -52,10 +54,10 @@ project/
 └── lib/atlas-automata/
 ```
 
-The child repository pins an exact Atlas commit. Updating the framework is explicit. Installation is also explicit and inspectable; see [install.md](install.md).
+The child repository pins an exact Atlas commit. Updating the framework is explicit. Installation is also explicit and inspectable; see [install.md](install.md). Domain configuration follows the mandatory agent-led contract in [configuration.md](configuration.md).
 
 ## Example flow
 
-For “I ran 5 km today,” the agent reads the activity skill, domain documentation, and existing records; chooses the exact record path and format; then calls `atlas_create`. Atlas synchronizes, writes only that content, validates, commits, checks the remote again, merges if needed, and pushes.
+After setup is complete, for “I ran 5 km today,” the agent reads the activity skill, domain documentation, indexing rules, and existing records; chooses the exact record path and format; then calls `atlas_create`. Atlas synchronizes, writes only that content, validates, commits, checks the remote again, merges if needed, and pushes.
 
 Atlas never decides whether running is exercise. That relationship belongs in project documentation or a skill and is evolved conservatively as described in [repository.md](repository.md).

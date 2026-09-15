@@ -21,7 +21,7 @@ Implementation source belongs under `src/`. Common workflows belong under `run/`
 
 ## Child protected state
 
-`data/` is the persistent domain database. Markdown is the primary 0.1 storage format, but physical layout is domain-specific: by entity, date, project, or another useful structure. The agent learns that layout from installed skills and documentation.
+`data/` is the persistent domain database. Markdown is the primary 0.2 storage format, but physical layout is domain-specific: by entity, date, project, or another useful structure. The agent learns that layout from installed skills and documentation.
 
 `doc/` is authoritative domain meaning: concepts, schemas, taxonomy, relationships, compatibility, decisions, rules, and view definitions.
 
@@ -32,6 +32,12 @@ Implementation source belongs under `src/`. Common workflows belong under `run/`
 `log/` records semantic actions. Git says which lines changed; Atlas history says what the action meant. The MCP/runtime generates history as part of a successful protected mutation.
 
 All five areas are directly readable and writable only through Atlas MCP.
+
+## Mandatory configuration
+
+The agent must complete the workflow in `ai/skills/configure/SKILL.md` before writing domain data. `AUTOMATIZER.md` begins with `atlas_setup: in_progress`; the agent marks it `complete` only after the user approves the model and the required domain, indexing, operations, and skill artifacts exist.
+
+Atlas reports setup state and rejects mutations involving `data/` until setup is structurally complete. See [configuration.md](configuration.md) for the full user flow, artifacts, and indexing contract.
 
 ## Conservative domain evolution
 

@@ -127,6 +127,9 @@ func runMutation(root, operation, path, destination, content, summary, commitMes
 			return result, err
 		}
 	}
+	if operation == "move" && destination == "AUTOMATIZER.md" {
+		return result, fmt.Errorf("AUTOMATIZER.md must be created or updated explicitly so Atlas can validate setup completion")
+	}
 	if err := ensureNoProtectedChanges(root); err != nil {
 		return result, err
 	}
@@ -136,6 +139,14 @@ func runMutation(root, operation, path, destination, content, summary, commitMes
 	}
 	if err := ensureNoProtectedChanges(root); err != nil {
 		return result, err
+	}
+	if err := requireSetupForDataMutation(root, path, destination); err != nil {
+		return result, err
+	}
+	if operation == "create" || operation == "update" {
+		if err := validateSetupCompletion(root, path, []byte(content)); err != nil {
+			return result, err
+		}
 	}
 
 	var paths []string

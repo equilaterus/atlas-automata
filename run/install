@@ -88,9 +88,22 @@ for skill in "$framework_root"/ai/skills/*; do
     cp -R "$skill" "$child_root/ai/skills/$name"
 done
 
+if [[ "$framework_root" != "$child_root" ]]; then
+    agent_rules="$child_root/AGENTS.md"
+    touch "$agent_rules"
+    if ! grep -qF '<!-- atlas-automata:start -->' "$agent_rules"; then
+        if [[ -s "$agent_rules" ]]; then
+            printf '\n' >> "$agent_rules"
+        fi
+        cat "$framework_root/ai/instructions/child-project.md" >> "$agent_rules"
+    fi
+fi
+
 echo "Atlas installed for $child_root"
 echo "Codex MCP configuration: $config"
 if [[ "$framework_root" != "$child_root" ]]; then
-    echo "Next: commit and push .gitignore, .gitmodules, .codex, .githooks, ai, and lib/atlas-automata."
+    echo "Next: commit and push .gitignore, .gitmodules, .codex, .githooks, AGENTS.md, ai, and lib/atlas-automata."
     echo "Use ATLAS_MCP_COMMIT=1 for the trusted bootstrap commit."
+    echo "Then restart the agent client, call atlas_status, and complete the configure skill."
+    echo "Atlas will reject domain-data writes until setup is complete."
 fi

@@ -9,6 +9,12 @@ import (
 
 var protectedDirectories = []string{"data", "doc", "ai", "log"}
 
+var requiredSetupDocuments = []string{
+	"doc/domain/model.md",
+	"doc/domain/indexing.md",
+	"doc/domain/operations.md",
+}
+
 func findRepoRoot(start string) (string, error) {
 	if start == "" {
 		var err error
@@ -109,6 +115,114 @@ func ensureNoProtectedChanges(root string) error {
 	}
 	if out != "" {
 		return fmt.Errorf("protected state already has changes outside this Atlas operation")
+	}
+	return nil
+}
+
+func setupMarkerComplete(content []byte) bool {
+	lines := strings.Split(string(content), "\n")
+	if len(lines) < 3 || strings.TrimSpace(lines[0]) != "---" {
+		return false
+	}
+	complete := false
+	version := false
+	for _, line := range lines[1:] {
+		line = strings.TrimSpace(line)
+		if line == "---" {
+			return complete && version
+		}
+		if line == "atlas_setup: complete" {
+			complete = true
+		}
+		if line == "atlas_setup_version: 1" {
+			version = true
+		}
+	}
+	return false
+}
+
+func setupArtifactsComplete(root string) (bool, error) {
+	for _, relative := range requiredSetupDocuments {
+		info, err := os.Stat(filepath.Join(root, filepath.FromSlash(relative)))
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		if err != nil {
+			return false, fmt.Errorf("inspect setup artifact %s: %w", relative, err)
+		}
+		if !info.Mode().IsRegular() {
+			return false, nil
+		}
+	}
+
+	skills, err := loadSkills(root)
+	if err != nil {
+		return false, err
+	}
+	for _, skill := range skills {
+		if skill != "configure" && skill != "mutate" {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func setupState(root string) (string, error) {
+	content, err := os.ReadFile(filepath.Join(root, "AUTOMATIZER.md"))
+	if os.IsNotExist(err) {
+		return "not_started", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("read AUTOMATIZER.md: %w", err)
+	}
+	if !setupMarkerComplete(content) {
+		return "in_progress", nil
+	}
+	complete, err := setupArtifactsComplete(root)
+	if err != nil {
+		return "", err
+	}
+	if !complete {
+		return "incomplete", nil
+	}
+	return "complete", nil
+}
+
+func isDataPath(path string) bool {
+	return strings.HasPrefix(filepath.ToSlash(filepath.Clean(path)), "data/")
+}
+
+func requireSetupForDataMutation(root string, paths ...string) error {
+	mutatesData := false
+	for _, path := range paths {
+		if path != "" && isDataPath(path) {
+			mutatesData = true
+			break
+		}
+	}
+	if !mutatesData {
+		return nil
+	}
+	state, err := setupState(root)
+	if err != nil {
+		return err
+	}
+	if state != "complete" {
+		return fmt.Errorf("Atlas setup is %s; complete every phase in ai/skills/configure/SKILL.md before mutating data", state)
+	}
+	return nil
+}
+
+func validateSetupCompletion(root, path string, content []byte) error {
+	if path != "AUTOMATIZER.md" || !setupMarkerComplete(content) {
+		return nil
+	}
+	complete, err := setupArtifactsComplete(root)
+	if err != nil {
+		return err
+	}
+	if !complete {
+		return fmt.Errorf("cannot mark Atlas setup complete: required domain model, indexing, operations, or domain skill is missing")
 	}
 	return nil
 }

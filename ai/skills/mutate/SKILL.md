@@ -5,6 +5,8 @@ description: Persist concrete changes to protected Automatizer state through Atl
 
 # Atlas mutation
 
+Call `atlas_status` first. If `setup` is not `complete`, stop normal domain work and run the complete `configure` skill. Never attempt to write under `data/` before configuration is verified.
+
 Read `AUTOMATIZER.md`, the relevant files under `doc/`, installed domain skills, and existing data before deciding a mutation.
 
 Use only the Atlas MCP tools for files under `data/`, `doc/`, `ai/`, `log/`, or `AUTOMATIZER.md`:
