@@ -1,5 +1,6 @@
 /bin/dbg/*
 /bin/rel/*
 /.atlas/
+/tmp/
 
 !.gitkeep

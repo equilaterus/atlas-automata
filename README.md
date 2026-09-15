@@ -14,7 +14,7 @@ ATLAS_MCP_COMMIT=1 git commit -m "Install Atlas Automata"
 git push
 ```
 
-The environment override on the bootstrap commit is required because installation activates the protected-state pre-commit guard. `.atlas/` contains the generated local binary and is added to the child `.gitignore`; it is not committed.
+The environment override on the bootstrap commit is required because installation activates the protected-state pre-commit guard. The installer adds `.atlas/` and `tmp/` to the child `.gitignore`: generated runtime files and repository-local temporary work are not committed. The operating system's absolute `/tmp` directory is already outside the repository and is never tracked by the child project.
 
 After cloning a child repository, restore the exact pinned framework revision before installing:
 

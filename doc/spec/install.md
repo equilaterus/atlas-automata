@@ -12,7 +12,7 @@ ATLAS_MCP_COMMIT=1 git commit -m "Install Atlas Automata"
 git push
 ```
 
-Installation activates the protected-state pre-commit hook before the bootstrap files under `ai/` are committed. `ATLAS_MCP_COMMIT=1` authorizes that one trusted bootstrap commit. The installer adds `.atlas/` to the child `.gitignore`; generated binaries must not be committed.
+Installation activates the protected-state pre-commit hook before the bootstrap files under `ai/` are committed. `ATLAS_MCP_COMMIT=1` authorizes that one trusted bootstrap commit. The installer adds `.atlas/` and `tmp/` to the child `.gitignore`; generated binaries and repository-local temporary work must not be committed. The operating system's absolute `/tmp` directory is outside the child repository and cannot be tracked by it.
 
 The installer verifies a normal Git worktree and the expected framework location, builds a release binary, and installs it at `.atlas/bin/atlas-mcp`. It configures `core.hooksPath=.githooks` and creates a project-local Codex entry in `.codex/config.toml`:
 
