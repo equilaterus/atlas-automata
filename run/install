@@ -17,7 +17,12 @@ fi
 "$framework_root/run/build-rel"
 
 mkdir -p "$child_root/.atlas/bin" "$child_root/.githooks" "$child_root/.codex"
-cp "$framework_root/bin/rel/atlas-mcp" "$child_root/.atlas/bin/atlas-mcp"
+atlas_binary_tmp="$(mktemp "$child_root/.atlas/bin/.atlas-mcp.XXXXXX")"
+trap 'rm -f "$atlas_binary_tmp"' EXIT
+cp "$framework_root/bin/rel/atlas-mcp" "$atlas_binary_tmp"
+chmod +x "$atlas_binary_tmp"
+mv -f "$atlas_binary_tmp" "$child_root/.atlas/bin/atlas-mcp"
+trap - EXIT
 
 ignore_file="$child_root/.gitignore"
 touch "$ignore_file"
