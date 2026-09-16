@@ -57,10 +57,12 @@ Then propose and confirm:
 - stable identity rules;
 - canonical file paths and slug rules;
 - physical organization by entity, date, project, or a justified combination;
-- authoritative indexes, if any, under `data/`;
+- the exact directory partition under `data/`, shown as a tree before approval;
+- the MCP-managed `index.md` that Atlas creates in every directory under `data/`;
+- any additional authoritative indexes, if the domain genuinely needs them;
 - reproducible generated indexes under `bin/indexes/` when source records alone are authoritative.
 
-Never maintain the same fact manually in both a record and an index. Document how every generated index is rebuilt.
+Do not silently choose a flat layout, expected scale, or "no index" policy. The user must see and approve the partition. Folder `index.md` files are mandatory navigational manifests maintained automatically by Atlas MCP; neither the user nor the agent writes them directly. Never maintain the same domain fact manually in both a record and an index. Document how every additional generated index is rebuilt.
 
 ### 4. Schema, taxonomy, and validation
 
@@ -106,7 +108,7 @@ Create or update these standard artifacts sequentially:
 
 1. `AUTOMATIZER.md` with YAML front matter containing `atlas_setup: in_progress` and `atlas_setup_version: 1`, plus purpose, users, scope, collections, restrictions, and the phase checklist.
 2. `doc/domain/model.md` with collections, schemas, lifecycles, taxonomy, relationships, validation, and ambiguity rules.
-3. `doc/domain/indexing.md` with access patterns, identities, paths, duplicate detection, authoritative indexes, generated indexes, and rebuild rules.
+3. `doc/domain/indexing.md` with access patterns, identities, the approved `data/` directory tree, duplicate detection, mandatory folder indexes, any additional indexes, and rebuild rules.
 4. `doc/domain/operations.md` with views, calculations, imports, exports, recurring workflows, and authoritative/generated boundaries.
 5. At least one domain skill under `ai/skills/<domain-name>/SKILL.md` that tells future agents how to read, validate, query, and mutate the configured domain.
 6. `doc/compatibility/inventory.yaml` when compatibility issues exist.
@@ -122,7 +124,7 @@ Run `atlas_status`. Confirm all of the following before inviting data entry:
 - `setup` is `complete`;
 - both Git and Atlas report clean state;
 - the domain skill is installed;
-- the index and rebuild rules are documented;
+- the approved partition and folder-index behavior are documented;
 - no unresolved decision was silently defaulted.
 
 Tell the user what was configured in plain language, then offer the first domain action. If verification fails, remain in setup and repair the incomplete phase.

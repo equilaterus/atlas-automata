@@ -128,6 +128,60 @@ func TestSetupGateRequiresCompleteGuidedConfiguration(t *testing.T) {
 	}, false)
 }
 
+func TestDataMutationsMaintainFolderIndexes(t *testing.T) {
+	repository := makeTestRepository(t)
+	callTestTool(t, repository.cloneB, "atlas_create", map[string]any{
+		"path": "data/games/positive/alpha.md", "content": "title: Alpha\n",
+	}, false)
+
+	for path, expected := range map[string][]string{
+		"data/index.md":                {dataIndexMarker, "[games/](games/index.md)"},
+		"data/games/index.md":          {dataIndexMarker, "[positive/](positive/index.md)"},
+		"data/games/positive/index.md": {dataIndexMarker, "[alpha](alpha.md)"},
+	} {
+		content, err := os.ReadFile(filepath.Join(repository.cloneB, filepath.FromSlash(path)))
+		if err != nil {
+			t.Fatalf("read generated index %s: %v", path, err)
+		}
+		for _, fragment := range expected {
+			if !strings.Contains(string(content), fragment) {
+				t.Fatalf("generated index %s does not contain %q: %s", path, fragment, content)
+			}
+		}
+	}
+
+	callTestTool(t, repository.cloneB, "atlas_create", map[string]any{
+		"path": "data/games/negative/beta.md", "content": "title: Beta\n",
+	}, false)
+	callTestTool(t, repository.cloneB, "atlas_move", map[string]any{
+		"source": "data/games/positive/alpha.md", "destination": "data/games/negative/alpha.md",
+	}, false)
+
+	positive, err := os.ReadFile(filepath.Join(repository.cloneB, "data/games/positive/index.md"))
+	if err != nil || strings.Contains(string(positive), "alpha.md") || !strings.Contains(string(positive), "_Empty._") {
+		t.Fatalf("source index was not refreshed after move: %v %s", err, positive)
+	}
+	negative, err := os.ReadFile(filepath.Join(repository.cloneB, "data/games/negative/index.md"))
+	if err != nil || !strings.Contains(string(negative), "alpha.md") || !strings.Contains(string(negative), "beta.md") {
+		t.Fatalf("destination index was not refreshed after move: %v %s", err, negative)
+	}
+
+	callTestTool(t, repository.cloneB, "atlas_delete", map[string]any{
+		"path": "data/games/negative/beta.md",
+	}, false)
+	negative, err = os.ReadFile(filepath.Join(repository.cloneB, "data/games/negative/index.md"))
+	if err != nil || !strings.Contains(string(negative), "alpha.md") || strings.Contains(string(negative), "beta.md") {
+		t.Fatalf("index was not refreshed after delete: %v %s", err, negative)
+	}
+
+	callTestTool(t, repository.cloneB, "atlas_update", map[string]any{
+		"path": "data/games/index.md", "content": "manual\n",
+	}, true)
+	if got := runTestGit(t, repository.cloneB, "status", "--porcelain"); got != "" {
+		t.Fatalf("repository is dirty after rejected index mutation: %s", got)
+	}
+}
+
 func configureTestGit(t *testing.T, root string) {
 	t.Helper()
 	runTestGit(t, root, "config", "user.name", "Atlas Test")

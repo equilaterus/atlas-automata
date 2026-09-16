@@ -21,7 +21,9 @@ Implementation source belongs under `src/`. Common workflows belong under `run/`
 
 ## Child protected state
 
-`data/` is the persistent domain database. Markdown is the primary 0.2 storage format, but physical layout is domain-specific: by entity, date, project, or another useful structure. The agent learns that layout from installed skills and documentation.
+`data/` is the persistent domain database. Markdown is the primary 0.2 storage format, but physical layout is domain-specific: by entity, date, project, or another useful structure. The agent proposes a concrete directory tree from retrieval needs and obtains explicit user approval during configuration.
+
+Every existing directory under `data/` contains an MCP-managed `index.md`. It lists immediate child folders and records as relative Markdown links, contains no independent domain facts, and is regenerated in the same commit as each data mutation. `index.md` is reserved; agents and users do not mutate it directly through Atlas.
 
 `doc/` is authoritative domain meaning: concepts, schemas, taxonomy, relationships, compatibility, decisions, rules, and view definitions.
 

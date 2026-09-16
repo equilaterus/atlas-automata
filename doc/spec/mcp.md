@@ -26,10 +26,10 @@ The server exposes six tools:
 | --- | --- |
 | `atlas_status` | Reports root, branch, HEAD, cleanliness, setup state, and installed skills without fetching. |
 | `atlas_sync` | Fetches `origin` and merges the current remote branch when necessary. |
-| `atlas_create` | Creates one new protected regular file. |
-| `atlas_update` | Atomically replaces one existing protected regular file. |
-| `atlas_delete` | Deletes one existing protected regular file. |
-| `atlas_move` | Moves one existing protected regular file to a new protected path. |
+| `atlas_create` | Creates one new protected regular file and refreshes data folder indexes when applicable. |
+| `atlas_update` | Atomically replaces one existing protected regular file and refreshes data folder indexes when applicable. |
+| `atlas_delete` | Deletes one existing protected regular file and refreshes data folder indexes when applicable. |
+| `atlas_move` | Moves one existing protected regular file and refreshes source and destination data folder indexes when applicable. |
 
 Mutation inputs use repository-relative paths. Create/update take complete UTF-8 `content`. All mutations accept optional `summary` and `commit_message`. The summary is appended to UTC-dated Markdown under `log/` in the same commit.
 
@@ -47,6 +47,8 @@ log/**
 
 Paths must be relative, remain inside the repository, and not traverse symlinked parents. Targets are files, not arbitrary directory trees. Atlas rejects a mutation if protected state already has staged, unstaged, or untracked changes, preventing unrelated direct edits from entering an Atlas commit.
 
+`index.md` is reserved in every directory under `data/`. Atlas creates and rebuilds these deterministic navigational manifests automatically. Direct create, update, delete, or move operations targeting a data `index.md` are rejected. An existing unmarked `index.md` blocks data mutations so Atlas never overwrites a project-owned file silently.
+
 Mutations involving `data/` additionally require `setup: complete`. Atlas derives that state from the `AUTOMATIZER.md` front-matter marker, the standard model/indexing/operations documents, and at least one installed non-base domain skill. It rejects a completion marker before those artifacts exist. See [configuration.md](configuration.md).
 
 ## Mutation transaction
@@ -58,13 +60,14 @@ Every mutation is sequential and follows this exact order:
 3. Compare local HEAD with `origin/<branch>` and merge the remote ref when it is not already an ancestor.
 4. If that merge conflicts, stop before applying the mutation and leave the conflict visible for human/agent reconciliation.
 5. Recheck protected cleanliness.
-6. Apply exactly one create, update, delete, or move.
-7. Append semantic history when requested.
-8. Validate that no unresolved conflict exists.
-9. Stage only the mutation paths and generated history path, then commit with `ATLAS_MCP_COMMIT=1` for the repository guard.
-10. Fetch and merge again.
-11. Revalidate and push `HEAD:refs/heads/<branch>`.
-12. If push is rejected because origin advanced, fetch, merge, revalidate, and retry up to three times.
+6. Apply exactly one requested create, update, delete, or move.
+7. For a data mutation, rebuild every existing `data/**/index.md` and collect only changed manifests.
+8. Append semantic history when requested.
+9. Validate that no unresolved conflict exists.
+10. Stage only the requested mutation paths, changed folder indexes, and generated history path, then commit with `ATLAS_MCP_COMMIT=1` for the repository guard.
+11. Fetch and merge again.
+12. Revalidate and push `HEAD:refs/heads/<branch>`.
+13. If push is rejected because origin advanced, fetch, merge, revalidate, and retry up to three times.
 
 Atlas never invokes rebase or force-push. A post-commit merge conflict is reported and never silently resolved.
 

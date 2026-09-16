@@ -71,6 +71,7 @@ When editing Atlas itself inside a child checkout, commit and push inside `lib/a
 - `atlas_status` reports repository and setup state.
 - `atlas_sync` fetches and merges the current `origin` branch.
 - `atlas_create`, `atlas_update`, `atlas_delete`, and `atlas_move` mutate protected files, append semantic history when requested, commit, resynchronize, and push.
+- Every data mutation also creates or refreshes the reserved `index.md` in each directory under `data/`, so the approved partition remains directly navigable without a separate generated index tree.
 
 Protected state consists of `AUTOMATIZER.md` and files under `data/`, `doc/`, `ai/`, and `log/`. Domain-data mutations require a completed setup. See [the documentation index](doc/INDEX.md) for detailed contracts.
 

@@ -75,7 +75,7 @@ func newMCPServer(root string) *mcp.Server {
 			return nil, state, err
 		})
 
-	mcp.AddTool(server, &mcp.Tool{Name: "atlas_create", Description: "Create one protected file, record history, commit, synchronize, and push."},
+	mcp.AddTool(server, &mcp.Tool{Name: "atlas_create", Description: "Create one protected file, refresh managed data folder indexes, record history, commit, synchronize, and push."},
 		func(_ context.Context, _ *mcp.CallToolRequest, input FileInput) (*mcp.CallToolResult, MutationResult, error) {
 			mutationLock.Lock()
 			defer mutationLock.Unlock()
@@ -83,7 +83,7 @@ func newMCPServer(root string) *mcp.Server {
 			return nil, result, err
 		})
 
-	mcp.AddTool(server, &mcp.Tool{Name: "atlas_update", Description: "Replace one protected file, record history, commit, synchronize, and push."},
+	mcp.AddTool(server, &mcp.Tool{Name: "atlas_update", Description: "Replace one protected file, refresh managed data folder indexes, record history, commit, synchronize, and push."},
 		func(_ context.Context, _ *mcp.CallToolRequest, input FileInput) (*mcp.CallToolResult, MutationResult, error) {
 			mutationLock.Lock()
 			defer mutationLock.Unlock()
@@ -91,7 +91,7 @@ func newMCPServer(root string) *mcp.Server {
 			return nil, result, err
 		})
 
-	mcp.AddTool(server, &mcp.Tool{Name: "atlas_delete", Description: "Delete one protected file, record history, commit, synchronize, and push."},
+	mcp.AddTool(server, &mcp.Tool{Name: "atlas_delete", Description: "Delete one protected file, refresh managed data folder indexes, record history, commit, synchronize, and push."},
 		func(_ context.Context, _ *mcp.CallToolRequest, input DeleteInput) (*mcp.CallToolResult, MutationResult, error) {
 			mutationLock.Lock()
 			defer mutationLock.Unlock()
@@ -99,7 +99,7 @@ func newMCPServer(root string) *mcp.Server {
 			return nil, result, err
 		})
 
-	mcp.AddTool(server, &mcp.Tool{Name: "atlas_move", Description: "Move one protected file, record history, commit, synchronize, and push."},
+	mcp.AddTool(server, &mcp.Tool{Name: "atlas_move", Description: "Move one protected file, refresh managed data folder indexes, record history, commit, synchronize, and push."},
 		func(_ context.Context, _ *mcp.CallToolRequest, input MoveInput) (*mcp.CallToolResult, MutationResult, error) {
 			mutationLock.Lock()
 			defer mutationLock.Unlock()

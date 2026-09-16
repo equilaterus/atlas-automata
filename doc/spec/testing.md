@@ -17,6 +17,7 @@ Atlas 0.2 uses functional/integration tests, not unit tests, mocks, interface-ba
 11. **Direct protected write:** stage a direct `data/` change and verify the commit guard rejects it.
 12. **Domain evolution:** preserve historical `running` records while documenting `running is_a exercise` and compatibility; verify both running and exercise views remain possible.
 13. **Generated dashboard:** generate `bin/dashboard.html`, delete `bin/`, regenerate, and verify source data is unchanged.
+14. **Folder indexes:** create, move, and delete nested data records; verify Atlas maintains linked `index.md` files in every data directory and rejects direct index mutation.
 
 ## Acceptance
 

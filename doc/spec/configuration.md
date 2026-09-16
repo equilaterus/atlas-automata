@@ -40,7 +40,11 @@ The agent first writes `atlas_setup: in_progress`. It changes that marker to `co
 
 Design indexes from user retrieval needs, not from storage convenience. Establish lookup keys, filters, sorting, grouping, cross-collection navigation, duplicate detection, and expected scale before selecting physical layout.
 
-Authoritative indexes may live under `data/` when they contain unique domain state. Reproducible indexes belong under `bin/indexes/` and must document their rebuild process. Never require manual synchronization of the same fact in both a source record and a derived index.
+The final proposal must show the exact directory tree under `data/`; a flat layout, expected scale, and optional indexes are decisions, not defaults. The user explicitly approves that partition before persistence.
+
+Atlas MCP reserves and maintains `index.md` in every existing directory under `data/`. These files are deterministic navigational manifests listing immediate child folders and records. A data mutation rebuilds affected manifests in the same commit, and agents never edit them directly.
+
+Additional authoritative indexes may live under `data/` when they contain unique domain state. Other reproducible indexes may live under `bin/indexes/` only when the approved domain needs them and must document their rebuild process. Never require manual synchronization of the same domain fact in both a record and an index.
 
 ## Evolution
 
