@@ -51,6 +51,8 @@ Paths must be relative, remain inside the repository, and not traverse symlinked
 
 Mutations involving `data/` additionally require `setup: complete`. Atlas derives that state from the `AUTOMATIZER.md` front-matter marker, the standard model/indexing/operations documents, and at least one installed non-base domain skill. It rejects a completion marker before those artifacts exist. See [configuration.md](configuration.md).
 
+During an approved physical reconfiguration, `atlas_setup: migration` permits only `atlas_move` with both source and destination under `data/`. Create, update, and delete remain blocked, so migration can change organization without changing or destroying record content.
+
 ## Mutation transaction
 
 Every mutation is sequential and follows this exact order:

@@ -182,6 +182,42 @@ func TestDataMutationsMaintainFolderIndexes(t *testing.T) {
 	}
 }
 
+func TestMigrationStateOnlyAllowsDataMoves(t *testing.T) {
+	repository := makeTestRepository(t)
+	callTestTool(t, repository.cloneB, "atlas_create", map[string]any{
+		"path": "data/games/item.md", "content": "title: Item\n",
+	}, false)
+	callTestTool(t, repository.cloneB, "atlas_update", map[string]any{
+		"path": "AUTOMATIZER.md", "content": "---\natlas_setup: migration\natlas_setup_version: 1\n---\n# Test domain\n",
+	}, false)
+	if state, err := setupState(repository.cloneB); err != nil || state != "migration" {
+		t.Fatalf("migration setup state = %q, %v; want migration", state, err)
+	}
+
+	callTestTool(t, repository.cloneB, "atlas_create", map[string]any{
+		"path": "data/games/new.md", "content": "blocked\n",
+	}, true)
+	callTestTool(t, repository.cloneB, "atlas_update", map[string]any{
+		"path": "data/games/item.md", "content": "blocked\n",
+	}, true)
+	callTestTool(t, repository.cloneB, "atlas_delete", map[string]any{
+		"path": "data/games/item.md",
+	}, true)
+	callTestTool(t, repository.cloneB, "atlas_move", map[string]any{
+		"source": "data/games/item.md", "destination": "data/games/positive/item.md",
+	}, false)
+	if _, err := os.Stat(filepath.Join(repository.cloneB, "data/games/positive/item.md")); err != nil {
+		t.Fatalf("approved migration move missing: %v", err)
+	}
+
+	callTestTool(t, repository.cloneB, "atlas_update", map[string]any{
+		"path": "AUTOMATIZER.md", "content": "---\natlas_setup: complete\natlas_setup_version: 1\n---\n# Test domain\n",
+	}, false)
+	if state, err := setupState(repository.cloneB); err != nil || state != "complete" {
+		t.Fatalf("final setup state = %q, %v; want complete", state, err)
+	}
+}
+
 func configureTestGit(t *testing.T, root string) {
 	t.Helper()
 	runTestGit(t, root, "config", "user.name", "Atlas Test")

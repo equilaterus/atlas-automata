@@ -18,10 +18,11 @@ The agent presents one complete proposal before protected state is written. `AMB
 | --- | --- |
 | `not_started` | `AUTOMATIZER.md` does not exist. |
 | `in_progress` | The file exists but its front matter does not contain `atlas_setup: complete`. |
+| `migration` | An approved evolution is moving existing records; only `atlas_move` between data paths is permitted. |
 | `incomplete` | The completion marker exists but one or more structural artifacts are missing. |
 | `complete` | The marker, standard domain documents, and at least one non-base domain skill exist. |
 
-Atlas rejects every mutation involving `data/` unless setup is `complete`. Configuration mutations under `AUTOMATIZER.md`, `doc/`, and `ai/` remain available so the agent can finish or repair setup.
+Atlas rejects every mutation involving `data/` unless setup is `complete`, except that the explicit `migration` state permits only moves from one data path to another. Configuration mutations under `AUTOMATIZER.md`, `doc/`, and `ai/` remain available so the agent can finish or repair setup.
 
 ## Required artifacts
 
@@ -48,4 +49,4 @@ Additional authoritative indexes may live under `data/` when they contain unique
 
 ## Evolution
 
-Reconfiguration follows the same phases. The agent inspects existing state, classifies compatibility, obtains approval, marks setup `in_progress`, applies sequential Atlas mutations, and restores `complete` only after documentation, domain skills, and indexing rules agree. Historical information is never silently reinterpreted.
+Reconfiguration follows the same phases. The agent inspects existing state, classifies compatibility, obtains approval, and marks setup `in_progress` while updating documentation and skills. When approved physical paths change, it then marks setup `migration`, moves records sequentially without changing their contents, verifies folder indexes, and restores `complete`. Historical information is never silently reinterpreted.

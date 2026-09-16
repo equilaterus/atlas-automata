@@ -143,7 +143,7 @@ func runMutation(root, operation, path, destination, content, summary, commitMes
 	if err := ensureNoProtectedChanges(root); err != nil {
 		return result, err
 	}
-	if err := requireSetupForDataMutation(root, path, destination); err != nil {
+	if err := requireSetupForDataMutation(root, operation, path, destination); err != nil {
 		return result, err
 	}
 	if isDataPath(path) || (destination != "" && isDataPath(destination)) {

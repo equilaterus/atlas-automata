@@ -119,26 +119,33 @@ func ensureNoProtectedChanges(root string) error {
 	return nil
 }
 
-func setupMarkerComplete(content []byte) bool {
+func setupMarkerState(content []byte) string {
 	lines := strings.Split(string(content), "\n")
 	if len(lines) < 3 || strings.TrimSpace(lines[0]) != "---" {
-		return false
+		return ""
 	}
-	complete := false
+	state := ""
 	version := false
 	for _, line := range lines[1:] {
 		line = strings.TrimSpace(line)
 		if line == "---" {
-			return complete && version
+			if version {
+				return state
+			}
+			return ""
 		}
-		if line == "atlas_setup: complete" {
-			complete = true
+		if strings.HasPrefix(line, "atlas_setup:") {
+			state = strings.TrimSpace(strings.TrimPrefix(line, "atlas_setup:"))
 		}
 		if line == "atlas_setup_version: 1" {
 			version = true
 		}
 	}
-	return false
+	return ""
+}
+
+func setupMarkerComplete(content []byte) bool {
+	return setupMarkerState(content) == "complete"
 }
 
 func setupArtifactsComplete(root string) (bool, error) {
@@ -175,7 +182,11 @@ func setupState(root string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("read AUTOMATIZER.md: %w", err)
 	}
-	if !setupMarkerComplete(content) {
+	marker := setupMarkerState(content)
+	if marker == "migration" {
+		return "migration", nil
+	}
+	if marker != "complete" {
 		return "in_progress", nil
 	}
 	complete, err := setupArtifactsComplete(root)
@@ -192,7 +203,7 @@ func isDataPath(path string) bool {
 	return strings.HasPrefix(filepath.ToSlash(filepath.Clean(path)), "data/")
 }
 
-func requireSetupForDataMutation(root string, paths ...string) error {
+func requireSetupForDataMutation(root, operation string, paths ...string) error {
 	mutatesData := false
 	for _, path := range paths {
 		if path != "" && isDataPath(path) {
@@ -207,10 +218,13 @@ func requireSetupForDataMutation(root string, paths ...string) error {
 	if err != nil {
 		return err
 	}
-	if state != "complete" {
-		return fmt.Errorf("Atlas setup is %s; complete every phase in ai/skills/configure/SKILL.md before mutating data", state)
+	if state == "complete" {
+		return nil
 	}
-	return nil
+	if state == "migration" && operation == "move" && len(paths) == 2 && isDataPath(paths[0]) && isDataPath(paths[1]) {
+		return nil
+	}
+	return fmt.Errorf("Atlas setup is %s; complete every phase in ai/skills/configure/SKILL.md before mutating data", state)
 }
 
 func validateSetupCompletion(root, path string, content []byte) error {

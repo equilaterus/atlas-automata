@@ -113,7 +113,8 @@ Create or update these standard artifacts sequentially:
 5. At least one domain skill under `ai/skills/<domain-name>/SKILL.md` that tells future agents how to read, validate, query, and mutate the configured domain.
 6. `doc/compatibility/inventory.yaml` when compatibility issues exist.
 7. Any deterministic source or build scripts outside protected state that the approved design actually requires.
-8. Update `AUTOMATIZER.md` last, preserving the approved content and changing only the setup state to `atlas_setup: complete`.
+8. For an approved evolution that requires moving existing data, change only the setup state to `atlas_setup: migration`, move records exclusively with `atlas_move`, and verify the migrated tree and folder indexes. Skip this state when no data paths change.
+9. Update `AUTOMATIZER.md` last, preserving the approved content and changing only the setup state to `atlas_setup: complete`.
 
 Include a concise semantic summary with every protected mutation. Never mark setup complete if a standard artifact is missing or a decision remains unresolved.
 
@@ -131,4 +132,4 @@ Tell the user what was configured in plain language, then offer the first domain
 
 ## Evolving an existing setup
 
-Run the same nine phases for changes, focusing questions on affected decisions while explicitly confirming unaffected phases. Set `atlas_setup: in_progress` before applying an approved multi-file evolution and restore `complete` only after compatibility documentation, domain skills, and indexes agree again.
+Run the same nine phases for changes, focusing questions on affected decisions while explicitly confirming unaffected phases. Set `atlas_setup: in_progress` before applying an approved multi-file evolution. If existing records must move, use `atlas_setup: migration` only after the new documentation and skills agree; this state permits only `atlas_move` between data paths. Restore `complete` only after the migrated tree and folder indexes are verified.

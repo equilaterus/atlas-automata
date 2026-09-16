@@ -24,6 +24,8 @@ The guided setup always covers, in order:
 
 No phase may be silently skipped. A non-applicable phase is recorded with its reason. Atlas rejects writes under `data/` until the setup is structurally complete, so adding the first record is never the first step.
 
+An approved evolution that changes physical data paths uses the restricted `atlas_setup: migration` state. In that state Atlas permits only `atlas_move` between data paths, updates folder indexes, and keeps create, update, and delete blocked until the migration is verified.
+
 ## What the agent installs
 
 Atlas is pinned at `lib/atlas-automata` as a Git submodule. The agent runs this bootstrap from the child repository root:
