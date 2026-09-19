@@ -40,7 +40,7 @@ git push
 
 The installer builds `.atlas/bin/atlas-mcp`, configures project-local Codex MCP access, installs Git and agent guards, installs the base `configure` and `mutate` skills, and adds the mandatory Atlas block to the child `AGENTS.md` without replacing existing project instructions. It ignores `.atlas/` and repository-local `tmp/` output.
 
-After bootstrap, restart the agent client so it loads the project MCP configuration. The agent then calls `atlas_status`; any setup state other than `complete` requires the full `configure` workflow before domain data can be written.
+After bootstrap, restart the agent client so it loads the project MCP configuration. At the start of that agent session, call `atlas_sync` once and then call `atlas_status`; do not repeat `atlas_sync` for each request. Any setup state other than `complete` requires the full `configure` workflow before domain data can be written.
 
 ## Clone or restore a child project
 

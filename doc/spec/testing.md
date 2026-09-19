@@ -19,6 +19,7 @@ Atlas 0.2 uses functional/integration tests, not unit tests, mocks, interface-ba
 13. **Generated dashboard:** generate `bin/dashboard.html`, delete `bin/`, regenerate, and verify source data is unchanged.
 14. **Folder indexes:** create, move, and delete nested data records; verify Atlas maintains linked `index.md` files in every data directory and rejects direct index mutation.
 15. **Safe migration:** verify `atlas_setup: migration` blocks data create, update, and delete while allowing data-to-data moves, then returns cleanly to complete.
+16. **MCP safety metadata:** list the six tools through an MCP client and verify their read-only, destructive, idempotent, and open-world annotations exactly.
 
 ## Acceptance
 

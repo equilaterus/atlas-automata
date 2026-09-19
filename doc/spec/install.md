@@ -82,7 +82,7 @@ Builds inject the version from `VERSION`. Generated binaries are not source-of-t
 - `sync-before-work` runs the binary's one-shot merge-only synchronization.
 - `guard-command` is a small agent-hook helper that rejects obvious rebase and force-push commands before execution.
 
-Hooks are guards, not business logic. The MCP owns the actual write transaction. Agent hosts should wire `sync-before-work` to session/prompt startup and `guard-command` to pre-command lifecycle events when those surfaces are available.
+Hooks are guards, not business logic. The MCP owns the actual write transaction. Agent hosts should wire `sync-before-work` to session startup only, never to each prompt, and `guard-command` to pre-command lifecycle events when those surfaces are available.
 
 ## Operational notes
 

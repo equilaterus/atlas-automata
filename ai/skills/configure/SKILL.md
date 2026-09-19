@@ -11,7 +11,7 @@ Never write domain records under `data/` until every phase below is complete and
 
 ## Operating rules
 
-- Run `atlas_sync`, then `atlas_status` before reasoning.
+- Confirm that `atlas_sync` and then `atlas_status` ran at session start. If they have not run in the current session, run them now in that order; never repeat `atlas_sync` within the same session.
 - Inspect `AUTOMATIZER.md`, `doc/`, `ai/skills/`, and existing `data/`. Never assume the repository is blank.
 - Reuse answers already stated by the user, but summarize them for confirmation. Do not make the user repeat themselves.
 - Conduct the setup as a short conversation. Ask one focused group of related questions at a time.
