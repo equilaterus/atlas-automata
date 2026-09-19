@@ -31,6 +31,8 @@ The server exposes six tools:
 | `atlas_delete` | Deletes one existing protected regular file and refreshes data folder indexes when applicable. |
 | `atlas_move` | Moves one existing protected regular file and refreshes source and destination data folder indexes when applicable. |
 
+Each tool publishes explicit MCP safety annotations. `atlas_status` is read-only and closed-world. `atlas_sync` is non-destructive and idempotent but open-world because it contacts `origin`. Create is additive; update, delete, and move are potentially destructive. Every mutation is open-world because its transaction fetches and pushes Git state. These annotations describe behavior faithfully so hosts do not need to infer risk from missing metadata.
+
 Mutation inputs use repository-relative paths. Create/update take complete UTF-8 `content`. All mutations accept optional `summary` and `commit_message`. The summary is appended to UTC-dated Markdown under `log/` in the same commit.
 
 ## Protected paths

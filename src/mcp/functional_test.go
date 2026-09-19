@@ -255,6 +255,61 @@ func callTestTool(t *testing.T, root, name string, arguments map[string]any, wan
 	return result
 }
 
+func TestMCPToolAnnotations(t *testing.T) {
+	type expectedAnnotations struct {
+		readOnly    bool
+		destructive bool
+		idempotent  bool
+		openWorld   bool
+	}
+	want := map[string]expectedAnnotations{
+		"atlas_status": {readOnly: true, destructive: false, idempotent: true, openWorld: false},
+		"atlas_sync":   {readOnly: false, destructive: false, idempotent: true, openWorld: true},
+		"atlas_create": {readOnly: false, destructive: false, idempotent: false, openWorld: true},
+		"atlas_update": {readOnly: false, destructive: true, idempotent: false, openWorld: true},
+		"atlas_delete": {readOnly: false, destructive: true, idempotent: false, openWorld: true},
+		"atlas_move":   {readOnly: false, destructive: true, idempotent: false, openWorld: true},
+	}
+
+	ctx := context.Background()
+	clientTransport, serverTransport := mcp.NewInMemoryTransports()
+	serverSession, err := newMCPServer(t.TempDir()).Connect(ctx, serverTransport, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer serverSession.Close()
+	client := mcp.NewClient(&mcp.Implementation{Name: "atlas-functional-test", Version: "0.2.0"}, nil)
+	clientSession, err := client.Connect(ctx, clientTransport, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer clientSession.Close()
+
+	result, err := clientSession.ListTools(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Tools) != len(want) {
+		t.Fatalf("listed %d tools, want %d", len(result.Tools), len(want))
+	}
+	for _, tool := range result.Tools {
+		expected, ok := want[tool.Name]
+		if !ok {
+			t.Fatalf("unexpected tool %q", tool.Name)
+		}
+		annotations := tool.Annotations
+		if annotations == nil || annotations.DestructiveHint == nil || annotations.OpenWorldHint == nil {
+			t.Fatalf("tool %s has incomplete annotations: %#v", tool.Name, annotations)
+		}
+		if annotations.ReadOnlyHint != expected.readOnly ||
+			*annotations.DestructiveHint != expected.destructive ||
+			annotations.IdempotentHint != expected.idempotent ||
+			*annotations.OpenWorldHint != expected.openWorld {
+			t.Errorf("tool %s annotations = %#v, want %#v", tool.Name, annotations, expected)
+		}
+	}
+}
+
 func TestMCPMutationLifecycleAndSync(t *testing.T) {
 	repository := makeTestRepository(t)
 	callTestTool(t, repository.cloneB, "atlas_create", map[string]any{

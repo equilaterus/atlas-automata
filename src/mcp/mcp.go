@@ -42,7 +42,11 @@ func newMCPServer(root string) *mcp.Server {
 	server := mcp.NewServer(&mcp.Implementation{Name: "atlas-automata", Version: atlasVersion()}, nil)
 	var mutationLock sync.Mutex
 
-	mcp.AddTool(server, &mcp.Tool{Name: "atlas_status", Description: "Inspect the configured Automatizer repository without changing it."},
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "atlas_status",
+		Description: "Inspect the configured Automatizer repository without changing it.",
+		Annotations: toolAnnotations(true, false, true, false),
+	},
 		func(_ context.Context, _ *mcp.CallToolRequest, _ EmptyInput) (*mcp.CallToolResult, StatusOutput, error) {
 			branch, err := currentBranch(root)
 			if err != nil {
@@ -67,7 +71,11 @@ func newMCPServer(root string) *mcp.Server {
 			return nil, StatusOutput{Root: root, Branch: branch, Head: head, Clean: status == "", Setup: setup, Skills: skills}, nil
 		})
 
-	mcp.AddTool(server, &mcp.Tool{Name: "atlas_sync", Description: "Fetch origin and merge the current remote branch without rebasing."},
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "atlas_sync",
+		Description: "Fetch origin and merge the current remote branch without rebasing.",
+		Annotations: toolAnnotations(false, false, true, true),
+	},
 		func(_ context.Context, _ *mcp.CallToolRequest, _ EmptyInput) (*mcp.CallToolResult, SyncState, error) {
 			mutationLock.Lock()
 			defer mutationLock.Unlock()
@@ -75,7 +83,11 @@ func newMCPServer(root string) *mcp.Server {
 			return nil, state, err
 		})
 
-	mcp.AddTool(server, &mcp.Tool{Name: "atlas_create", Description: "Create one protected file, refresh managed data folder indexes, record history, commit, synchronize, and push."},
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "atlas_create",
+		Description: "Create one protected file, refresh managed data folder indexes, record history, commit, synchronize, and push.",
+		Annotations: toolAnnotations(false, false, false, true),
+	},
 		func(_ context.Context, _ *mcp.CallToolRequest, input FileInput) (*mcp.CallToolResult, MutationResult, error) {
 			mutationLock.Lock()
 			defer mutationLock.Unlock()
@@ -83,7 +95,11 @@ func newMCPServer(root string) *mcp.Server {
 			return nil, result, err
 		})
 
-	mcp.AddTool(server, &mcp.Tool{Name: "atlas_update", Description: "Replace one protected file, refresh managed data folder indexes, record history, commit, synchronize, and push."},
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "atlas_update",
+		Description: "Replace one protected file, refresh managed data folder indexes, record history, commit, synchronize, and push.",
+		Annotations: toolAnnotations(false, true, false, true),
+	},
 		func(_ context.Context, _ *mcp.CallToolRequest, input FileInput) (*mcp.CallToolResult, MutationResult, error) {
 			mutationLock.Lock()
 			defer mutationLock.Unlock()
@@ -91,7 +107,11 @@ func newMCPServer(root string) *mcp.Server {
 			return nil, result, err
 		})
 
-	mcp.AddTool(server, &mcp.Tool{Name: "atlas_delete", Description: "Delete one protected file, refresh managed data folder indexes, record history, commit, synchronize, and push."},
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "atlas_delete",
+		Description: "Delete one protected file, refresh managed data folder indexes, record history, commit, synchronize, and push.",
+		Annotations: toolAnnotations(false, true, false, true),
+	},
 		func(_ context.Context, _ *mcp.CallToolRequest, input DeleteInput) (*mcp.CallToolResult, MutationResult, error) {
 			mutationLock.Lock()
 			defer mutationLock.Unlock()
@@ -99,7 +119,11 @@ func newMCPServer(root string) *mcp.Server {
 			return nil, result, err
 		})
 
-	mcp.AddTool(server, &mcp.Tool{Name: "atlas_move", Description: "Move one protected file, refresh managed data folder indexes, record history, commit, synchronize, and push."},
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "atlas_move",
+		Description: "Move one protected file, refresh managed data folder indexes, record history, commit, synchronize, and push.",
+		Annotations: toolAnnotations(false, true, false, true),
+	},
 		func(_ context.Context, _ *mcp.CallToolRequest, input MoveInput) (*mcp.CallToolResult, MutationResult, error) {
 			mutationLock.Lock()
 			defer mutationLock.Unlock()
@@ -108,4 +132,17 @@ func newMCPServer(root string) *mcp.Server {
 		})
 
 	return server
+}
+
+func toolAnnotations(readOnly, destructive, idempotent, openWorld bool) *mcp.ToolAnnotations {
+	return &mcp.ToolAnnotations{
+		ReadOnlyHint:    readOnly,
+		DestructiveHint: boolPointer(destructive),
+		IdempotentHint:  idempotent,
+		OpenWorldHint:   boolPointer(openWorld),
+	}
+}
+
+func boolPointer(value bool) *bool {
+	return &value
 }

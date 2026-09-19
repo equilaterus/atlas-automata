@@ -9,17 +9,17 @@ Atlas Automata is a Git-native controlled writer for Automatizer repositories. K
 3. Protected state is written only through Atlas MCP.
 4. `data/` is the domain database, `doc/` is authoritative domain meaning, and `ai/` contains installed agent capabilities.
 5. Agent-led configuration is mandatory before domain data; no setup phase may be silently skipped.
-6. Synchronize before work and again inside every protected mutation.
+6. Synchronize once at session start; every protected mutation synchronizes internally.
 7. Use merge only. Never rebase, force-push, or silently resolve conflicts.
 8. Never silently destroy or reinterpret historical information.
 9. Keep Atlas concrete, small, and readable: no interfaces and no speculative abstractions.
 10. Prefer functional tests with real Git repositories and real MCP calls.
 
-## Start every user request
+## Start each agent session
 
-Before reasoning about or changing an Automatizer child project, run `atlas_sync`. If the MCP is not yet available, run the installed `.atlas/bin/atlas-mcp --root <repo> --sync` guard. Stop on a merge conflict and report it; never guess a resolution.
+Before the first request handled in an Automatizer child project session, run `atlas_sync` once. If the MCP is not yet available, run the installed `.atlas/bin/atlas-mcp --root <repo> --sync` guard. Stop on a merge conflict and report it; never guess a resolution.
 
-Then run `atlas_status`. When setup is not `complete`, load `ai/skills/configure/SKILL.md` and finish its full guided workflow before accepting domain data.
+Then run `atlas_status`. Do not repeat `atlas_sync` mechanically for later requests in the same session: protected mutation tools synchronize internally. When setup is not `complete`, load `ai/skills/configure/SKILL.md` and finish its full guided workflow before accepting domain data.
 
 ## Reading and writing
 

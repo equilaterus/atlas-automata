@@ -1,7 +1,7 @@
 <!-- atlas-automata:start -->
 ## Atlas Automata
 
-Start every user request by calling `atlas_sync` and `atlas_status`.
+At the start of an agent session, call `atlas_sync` once and then call `atlas_status`. Do not repeat `atlas_sync` for every user request in the same session; protected mutation tools synchronize internally.
 
 If `atlas_status` reports `setup` other than `complete`, load `ai/skills/configure/SKILL.md` and conduct its complete agent-led configuration before accepting or writing domain data. Do not skip a phase, silently choose a semantic default, or ask the user to design the repository unaided.
 
