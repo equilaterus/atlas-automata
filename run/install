@@ -9,14 +9,19 @@ if [[ ! -d "$child_root/.git" ]]; then
     exit 1
 fi
 
-if [[ "$framework_root" != "$child_root/lib/atlas-automata" && "$framework_root" != "$child_root" ]]; then
+expected_framework="$child_root/lib/atlas-automata"
+resolved_expected_framework=""
+if [[ -d "$expected_framework" ]]; then
+    resolved_expected_framework="$(cd "$expected_framework" && pwd)"
+fi
+if [[ "$framework_root" != "$child_root" && "$framework_root" != "$resolved_expected_framework" ]]; then
     echo "Expected Atlas at lib/atlas-automata in the child repository" >&2
     exit 1
 fi
 
 "$framework_root/run/build-rel"
 
-mkdir -p "$child_root/.atlas/bin" "$child_root/.githooks" "$child_root/.codex"
+mkdir -p "$child_root/.atlas/bin" "$child_root/.githooks" "$child_root/.codex" "$child_root/.agents"
 atlas_binary_tmp="$(mktemp "$child_root/.atlas/bin/.atlas-mcp.XXXXXX")"
 trap 'rm -f "$atlas_binary_tmp"' EXIT
 cp "$framework_root/bin/rel/atlas-mcp" "$atlas_binary_tmp"
@@ -57,7 +62,7 @@ install_hook pre-push
 git -C "$child_root" config core.hooksPath .githooks
 
 mkdir -p "$child_root/ai/hooks"
-for name in sync-before-work guard-command; do
+for name in sync-before-work guard-command session-start domain-context codex-hooks.json; do
     source="$framework_root/ai/hooks/$name"
     target="$child_root/ai/hooks/$name"
     if [[ -e "$target" ]] && ! cmp -s "$source" "$target"; then
@@ -65,8 +70,17 @@ for name in sync-before-work guard-command; do
         continue
     fi
     cp "$source" "$target"
-    chmod +x "$target"
+    if [[ "$name" != codex-hooks.json ]]; then
+        chmod +x "$target"
+    fi
 done
+
+codex_hooks="$child_root/.codex/hooks.json"
+if [[ -e "$codex_hooks" ]] && ! cmp -s "$framework_root/ai/hooks/codex-hooks.json" "$codex_hooks"; then
+    echo "Refusing to replace project-owned Codex hooks: $codex_hooks" >&2
+    exit 1
+fi
+cp "$framework_root/ai/hooks/codex-hooks.json" "$codex_hooks"
 
 config="$child_root/.codex/config.toml"
 if [[ ! -e "$config" ]]; then
@@ -93,6 +107,19 @@ for skill in "$framework_root"/ai/skills/*; do
     cp -R "$skill" "$child_root/ai/skills/$name"
 done
 
+skill_link="$child_root/.agents/skills"
+if [[ -L "$skill_link" ]]; then
+    if [[ "$(readlink "$skill_link")" != ../ai/skills ]]; then
+        echo "Refusing to replace project-owned skill link: $skill_link" >&2
+        exit 1
+    fi
+elif [[ -e "$skill_link" ]]; then
+    echo "Refusing to replace project-owned skill directory: $skill_link" >&2
+    exit 1
+else
+    ln -s ../ai/skills "$skill_link"
+fi
+
 if [[ "$framework_root" != "$child_root" ]]; then
     agent_rules="$child_root/AGENTS.md"
     touch "$agent_rules"
@@ -107,7 +134,7 @@ fi
 echo "Atlas installed for $child_root"
 echo "Codex MCP configuration: $config"
 if [[ "$framework_root" != "$child_root" ]]; then
-    echo "Next: commit and push .gitignore, .gitmodules, .codex, .githooks, AGENTS.md, ai, and lib/atlas-automata."
+    echo "Next: commit and push .gitignore, .gitmodules, .agents, .codex, .githooks, AGENTS.md, ai, and lib/atlas-automata."
     echo "Use ATLAS_MCP_COMMIT=1 for the trusted bootstrap commit."
     echo "Then restart the agent client, call atlas_status, and complete the configure skill."
     echo "Atlas will reject domain-data writes until setup is complete."

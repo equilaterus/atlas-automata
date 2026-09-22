@@ -33,12 +33,12 @@ Atlas is pinned at `lib/atlas-automata` as a Git submodule. The agent runs this 
 ```bash
 git submodule add https://github.com/equilaterus/atlas-automata.git lib/atlas-automata
 ./lib/atlas-automata/run/install
-git add .gitignore .gitmodules .codex .githooks AGENTS.md ai lib/atlas-automata
+git add .gitignore .gitmodules .agents .codex .githooks AGENTS.md ai lib/atlas-automata
 ATLAS_MCP_COMMIT=1 git commit -m "Install Atlas Automata"
 git push
 ```
 
-The installer builds `.atlas/bin/atlas-mcp`, configures project-local Codex MCP access, installs Git and agent guards, installs the base `configure` and `mutate` skills, and adds the mandatory Atlas block to the child `AGENTS.md` without replacing existing project instructions. It ignores `.atlas/` and repository-local `tmp/` output.
+The installer builds `.atlas/bin/atlas-mcp`, configures project-local Codex MCP access and lifecycle hooks, installs Git and agent guards, installs the base `configure` and `mutate` skills, exposes protected skills through `.agents/skills`, and adds the mandatory Atlas block to the child `AGENTS.md` without replacing existing project instructions. It ignores `.atlas/` and repository-local `tmp/` output.
 
 After bootstrap, restart the agent client so it loads the project MCP configuration. At the start of that agent session, call `atlas_sync` once and then call `atlas_status`; do not repeat `atlas_sync` for each request. Any setup state other than `complete` requires the full `configure` workflow before domain data can be written.
 
@@ -61,7 +61,7 @@ Tell the agent to update and resynchronize Atlas, or run:
 ```bash
 git submodule update --remote --merge lib/atlas-automata
 ./lib/atlas-automata/run/install
-git add .gitignore AGENTS.md ai lib/atlas-automata
+git add .gitignore .agents .codex AGENTS.md ai lib/atlas-automata
 ATLAS_MCP_COMMIT=1 git commit -m "Update Atlas Automata"
 git push
 ```

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+printf '%s\n' 'This is an Atlas child project. Treat every request about its configured domain as domain work, including casual questions. Before answering, read AUTOMATIZER.md, the relevant discovered skill, domain documentation, and existing records. Treat user-provided facts, preferences, ratings, corrections, and decisions as candidate domain mutations and persist them only through Atlas MCP. Never replace Atlas MCP with direct protected-state writes.'

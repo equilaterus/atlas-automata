@@ -1,0 +1,4 @@
+interface:
+  display_name: "Use Atlas Domain"
+  short_description: "Read and persist configured domain knowledge"
+  default_prompt: "Use $atlas-mutate to handle this domain request and persist any new information through Atlas MCP."

@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(git rev-parse --show-toplevel)"
+if ! output="$("$root/.atlas/bin/atlas-mcp" --root "$root" --sync 2>&1)"; then
+    printf '%s\n' "$output" >&2
+    printf '%s\n' '{"continue":false,"stopReason":"Atlas synchronization failed. Resolve the Git or merge problem before continuing."}'
+    exit 0
+fi
+
+printf '%s\n' 'Atlas synchronized this repository for the session. Call atlas_status before handling the first request. If setup is not complete, run the complete configure skill before accepting domain data.'

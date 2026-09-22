@@ -7,7 +7,7 @@ Atlas must be pinned as a Git submodule at `lib/atlas-automata`. From the child 
 ```bash
 git submodule add https://github.com/equilaterus/atlas-automata.git lib/atlas-automata
 ./lib/atlas-automata/run/install
-git add .gitignore .gitmodules .codex .githooks AGENTS.md ai lib/atlas-automata
+git add .gitignore .gitmodules .agents .codex .githooks AGENTS.md ai lib/atlas-automata
 ATLAS_MCP_COMMIT=1 git commit -m "Install Atlas Automata"
 git push
 ```
@@ -22,7 +22,7 @@ command = "/absolute/project/path/.atlas/bin/atlas-mcp"
 args = ["--root", "/absolute/project/path"]
 ```
 
-The agent guards `sync-before-work` and `guard-command` are copied into `ai/hooks/` without replacing different project-owned hooks. An existing Atlas MCP entry is preserved. Missing base skills, including mandatory `configure`, are copied into `ai/skills/`; any project-owned skill with the same name is preserved. The installer appends an idempotent Atlas instruction block to the child `AGENTS.md` without replacing existing instructions. Installation is the trusted bootstrap step that creates initial protected capabilities before MCP enforcement is active.
+The agent guards are copied into `ai/hooks/` without replacing different project-owned hooks. The installer registers the Atlas `SessionStart` and `UserPromptSubmit` lifecycle hooks in `.codex/hooks.json`; it stops rather than replace different project-owned Codex hooks. An existing Atlas MCP entry is preserved. Missing base skills, including mandatory `configure`, are copied into `ai/skills/`; any project-owned skill with the same name is preserved. A repository skill-discovery link at `.agents/skills` exposes that protected skill directory to Codex without duplicating it. The installer appends an idempotent Atlas instruction block to the child `AGENTS.md` without replacing existing instructions. Installation is the trusted bootstrap step that creates initial protected capabilities before MCP enforcement is active.
 
 After the bootstrap is committed and pushed, the user restarts the agent client so it loads the MCP configuration. The agent calls `atlas_sync` and `atlas_status`, then completes the guided workflow in `configure` whenever setup is not `complete`. Domain-data writes are technically blocked until that workflow produces the required artifacts. See [configuration.md](configuration.md).
 
@@ -43,7 +43,7 @@ Updating Atlas is explicit. Update from the submodule remote, reinstall the gene
 ```bash
 git submodule update --remote --merge lib/atlas-automata
 ./lib/atlas-automata/run/install
-git add .gitignore AGENTS.md ai lib/atlas-automata
+git add .gitignore .agents .codex AGENTS.md ai lib/atlas-automata
 ATLAS_MCP_COMMIT=1 git commit -m "Update Atlas Automata"
 git push
 ```
@@ -55,7 +55,7 @@ git -C lib/atlas-automata add <atlas-files>
 git -C lib/atlas-automata commit -m "Describe the Atlas change"
 git -C lib/atlas-automata push
 ./lib/atlas-automata/run/install
-git add .gitignore AGENTS.md ai lib/atlas-automata
+git add .gitignore .agents .codex AGENTS.md ai lib/atlas-automata
 ATLAS_MCP_COMMIT=1 git commit -m "Update Atlas Automata"
 git push
 ```
@@ -79,10 +79,12 @@ Builds inject the version from `VERSION`. Generated binaries are not source-of-t
 - `pre-commit` rejects staged protected paths unless the commit was created by Atlas MCP.
 - `pre-rebase` rejects every rebase.
 - `pre-push` rejects branch deletion and non-fast-forward updates, including force-push.
-- `sync-before-work` runs the binary's one-shot merge-only synchronization.
+- `session-start` runs the binary's one-shot merge-only synchronization and stops the session on failure.
+- `domain-context` reinforces Atlas domain classification on every user prompt and after compaction.
+- `sync-before-work` remains available as a host-neutral one-shot synchronization helper.
 - `guard-command` is a small agent-hook helper that rejects obvious rebase and force-push commands before execution.
 
-Hooks are guards, not business logic. The MCP owns the actual write transaction. Agent hosts should wire `sync-before-work` to session startup only, never to each prompt, and `guard-command` to pre-command lifecycle events when those surfaces are available.
+Hooks are guards, not business logic. The MCP owns the actual write transaction. The Codex lifecycle hooks synchronize only at session start; prompt and compaction hooks inject domain context without synchronizing or mutating state. `guard-command` remains available for pre-command lifecycle events on hosts that expose them.
 
 ## Operational notes
 

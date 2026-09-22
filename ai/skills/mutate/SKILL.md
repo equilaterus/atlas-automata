@@ -1,9 +1,11 @@
 ---
 name: atlas-mutate
-description: Persist concrete changes to protected Automatizer state through Atlas MCP.
+description: Read and persist configured-domain knowledge in an Atlas child project. Use for every request about the project's domain, including recommendations and casual discussion, and whenever the user supplies facts, preferences, ratings, corrections, decisions, or other information that may update protected Automatizer state.
 ---
 
 # Atlas mutation
+
+Treat every request about the configured domain as domain work. Read before answering even when the request appears conversational. User-provided facts, preferences, ratings, corrections, and decisions are candidate mutations; preserve them when they fit the configured model instead of merely acknowledging them in chat.
 
 Call `atlas_status` first. If `setup` is not `complete`, stop normal domain work and run the complete `configure` skill. Never attempt to write under `data/` before configuration is verified.
 

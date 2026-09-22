@@ -27,7 +27,7 @@ Every existing directory under `data/` contains an MCP-managed `index.md`. It li
 
 `doc/` is authoritative domain meaning: concepts, schemas, taxonomy, relationships, compatibility, decisions, rules, and view definitions.
 
-`ai/` contains capabilities installed in that child project. Skills explain record locations, required fields, meanings, relationships, ambiguity rules, and compatibility. Skills inform the agent; they never write state.
+`ai/` contains capabilities installed in that child project. Skills explain record locations, required fields, meanings, relationships, ambiguity rules, and compatibility. Skills inform the agent; they never write state. The protected `ai/skills/` directory is the source of truth for skills. Codex discovers it through the installer-managed `.agents/skills` symbolic link, so domain skills created during configuration become available without maintaining a second copy.
 
 `AUTOMATIZER.md` describes the configured domain, users, collections, restrictions, organization, calculations, and project-specific workflow.
 

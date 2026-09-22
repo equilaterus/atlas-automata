@@ -1,0 +1,36 @@
+{
+  "description": "Atlas session synchronization and domain-work enforcement.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "^(startup|resume|clear)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/env bash \"$(git rev-parse --show-toplevel)/ai/hooks/session-start\"",
+            "statusMessage": "Synchronizing Atlas"
+          }
+        ]
+      },
+      {
+        "matcher": "^compact$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/env bash \"$(git rev-parse --show-toplevel)/ai/hooks/domain-context\""
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/env bash \"$(git rev-parse --show-toplevel)/ai/hooks/domain-context\""
+          }
+        ]
+      }
+    ]
+  }
+}

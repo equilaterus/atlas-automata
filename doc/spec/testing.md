@@ -20,6 +20,7 @@ Atlas 0.2 uses functional/integration tests, not unit tests, mocks, interface-ba
 14. **Folder indexes:** create, move, and delete nested data records; verify Atlas maintains linked `index.md` files in every data directory and rejects direct index mutation.
 15. **Safe migration:** verify `atlas_setup: migration` blocks data create, update, and delete while allowing data-to-data moves, then returns cleanly to complete.
 16. **MCP safety metadata:** list the six tools through an MCP client and verify their read-only, destructive, idempotent, and open-world annotations exactly.
+17. **Codex activation:** install Atlas into a real temporary Git repository; verify MCP configuration, lifecycle hooks, executable hook scripts, discovered skill link, and domain-work instructions.
 
 ## Acceptance
 

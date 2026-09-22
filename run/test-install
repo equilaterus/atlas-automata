@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+framework_root="$(cd "$(dirname "$0")/.." && pwd)"
+test_root="$(mktemp -d)"
+trap 'rm -rf -- "$test_root"' EXIT
+child_root="$test_root/child"
+
+git init --quiet --initial-branch=main "$child_root"
+git -C "$child_root" config user.name "Atlas Test"
+git -C "$child_root" config user.email "atlas@example.test"
+printf '%s\n' 'child repository' > "$child_root/README.md"
+git -C "$child_root" add README.md
+git -C "$child_root" commit --quiet -m initial
+mkdir -p "$child_root/lib"
+ln -s "$framework_root" "$child_root/lib/atlas-automata"
+
+(
+    cd "$child_root"
+    ./lib/atlas-automata/run/install >/dev/null
+)
+
+[[ "$(readlink "$child_root/.agents/skills")" == ../ai/skills ]]
+cmp -s "$framework_root/ai/hooks/codex-hooks.json" "$child_root/.codex/hooks.json"
+test -x "$child_root/ai/hooks/session-start"
+test -x "$child_root/ai/hooks/domain-context"
+grep -qF 'Every user request concerning the configured domain is domain work' "$child_root/AGENTS.md"
+grep -qF '[mcp_servers.atlas]' "$child_root/.codex/config.toml"
