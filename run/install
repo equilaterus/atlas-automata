@@ -77,8 +77,10 @@ done
 
 codex_hooks="$child_root/.codex/hooks.json"
 if [[ -e "$codex_hooks" ]] && ! cmp -s "$framework_root/ai/hooks/codex-hooks.json" "$codex_hooks"; then
-    echo "Refusing to replace project-owned Codex hooks: $codex_hooks" >&2
-    exit 1
+    if ! grep -qF '"description": "Atlas session synchronization and domain-work enforcement."' "$codex_hooks"; then
+        echo "Refusing to replace project-owned Codex hooks: $codex_hooks" >&2
+        exit 1
+    fi
 fi
 cp "$framework_root/ai/hooks/codex-hooks.json" "$codex_hooks"
 
@@ -123,11 +125,39 @@ fi
 if [[ "$framework_root" != "$child_root" ]]; then
     agent_rules="$child_root/AGENTS.md"
     touch "$agent_rules"
-    if ! grep -qF '<!-- atlas-automata:start -->' "$agent_rules"; then
+    start_count="$(grep -cF '<!-- atlas-automata:start -->' "$agent_rules" || true)"
+    end_count="$(grep -cF '<!-- atlas-automata:end -->' "$agent_rules" || true)"
+    if [[ "$start_count" == 0 && "$end_count" == 0 ]]; then
         if [[ -s "$agent_rules" ]]; then
             printf '\n' >> "$agent_rules"
         fi
         cat "$framework_root/ai/instructions/child-project.md" >> "$agent_rules"
+    elif [[ "$start_count" == 1 && "$end_count" == 1 ]]; then
+        agent_rules_tmp="$(mktemp "$child_root/.atlas-agents.XXXXXX")"
+        trap 'rm -f "$agent_rules_tmp"' EXIT
+        awk -v replacement="$framework_root/ai/instructions/child-project.md" '
+            BEGIN {
+                while ((getline line < replacement) > 0) {
+                    managed = managed line ORS
+                }
+                close(replacement)
+            }
+            $0 == "<!-- atlas-automata:start -->" {
+                printf "%s", managed
+                inside = 1
+                next
+            }
+            inside && $0 == "<!-- atlas-automata:end -->" {
+                inside = 0
+                next
+            }
+            !inside { print }
+        ' "$agent_rules" > "$agent_rules_tmp"
+        mv -f "$agent_rules_tmp" "$agent_rules"
+        trap - EXIT
+    else
+        echo "Malformed Atlas instruction block in $agent_rules" >&2
+        exit 1
     fi
 fi
 

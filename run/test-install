@@ -10,7 +10,8 @@ git init --quiet --initial-branch=main "$child_root"
 git -C "$child_root" config user.name "Atlas Test"
 git -C "$child_root" config user.email "atlas@example.test"
 printf '%s\n' 'child repository' > "$child_root/README.md"
-git -C "$child_root" add README.md
+printf '%s\n' 'project instructions' '<!-- atlas-automata:start -->' 'obsolete Atlas instructions' '<!-- atlas-automata:end -->' > "$child_root/AGENTS.md"
+git -C "$child_root" add README.md AGENTS.md
 git -C "$child_root" commit --quiet -m initial
 mkdir -p "$child_root/lib"
 ln -s "$framework_root" "$child_root/lib/atlas-automata"
@@ -25,4 +26,8 @@ cmp -s "$framework_root/ai/hooks/codex-hooks.json" "$child_root/.codex/hooks.jso
 test -x "$child_root/ai/hooks/session-start"
 test -x "$child_root/ai/hooks/domain-context"
 grep -qF 'Every user request concerning the configured domain is domain work' "$child_root/AGENTS.md"
+grep -qF 'project instructions' "$child_root/AGENTS.md"
+if grep -qF 'obsolete Atlas instructions' "$child_root/AGENTS.md"; then
+    exit 1
+fi
 grep -qF '[mcp_servers.atlas]' "$child_root/.codex/config.toml"
